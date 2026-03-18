@@ -282,7 +282,7 @@
                     class="w-full text-[10px] text-emerald-400/60 hover:text-emerald-400 uppercase font-black tracking-[0.2em] bg-black/40 px-4 py-4 rounded-xl transition-all border border-emerald-500/30">SV
                     / EN</button>
             </div>
-            <span class="absolute bottom-5 right-7 text-[10px] font-mono text-emerald-400/40 tracking-widest pointer-events-none">v1.1</span>
+            <span id="game-version" class="absolute bottom-5 right-7 text-[9px] font-mono text-emerald-400/40 tracking-widest pointer-events-none">v1.1</span>
         </div>
     </div>
 
@@ -1093,6 +1093,13 @@
         window.onload = () => {
             if ('serviceWorker' in navigator) {
                 navigator.serviceWorker.register('sw.js').catch(e => console.error('PWA fail:', e));
+            }
+            const gv = getEl('game-version');
+            if (gv) {
+                try {
+                    const d = new Date(document.lastModified);
+                    if (!isNaN(d)) gv.innerText = `build.${d.getFullYear().toString().slice(-2)}.${(d.getMonth() + 1).toString().padStart(2, '0')}.${d.getDate().toString().padStart(2, '0')}-${d.getHours().toString().padStart(2, '0')}${d.getMinutes().toString().padStart(2, '0')}`;
+                } catch(e) {}
             }
             initAuth();
             initStation3D();
