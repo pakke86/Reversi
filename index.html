@@ -157,10 +157,20 @@
 
     <!-- Spelskärm -->
     <div id="game-container" class="max-w-md w-full text-center space-y-4 relative z-10 hidden">
-        <header class="space-y-1">
+        <header class="space-y-2">
             <h1 class="text-4xl font-black tracking-tighter animated-title italic">REVERSI</h1>
             <p id="mode-badge" class="text-[8px] text-blue-400 tracking-[0.4em] uppercase opacity-70"></p>
-            <div id="online-info" class="hidden text-[10px] text-purple-400 font-mono mt-1 tracking-wider uppercase">Frekvens: <span id="current-match-id" class="font-black bg-purple-900/40 px-3 py-1 rounded-lg border border-purple-500/30 select-all"></span></div>
+            <div id="online-info" class="hidden mt-4">
+                <div class="flex flex-col items-center justify-center gap-2">
+                    <span class="text-[10px] text-purple-400/80 font-black tracking-[0.3em] uppercase">SÄNDNINGS-FREKVENS</span>
+                    <button onclick="copyMatchId()" class="flex items-center gap-3 font-black text-white text-xl bg-purple-900/60 px-6 py-3 rounded-2xl border-2 border-purple-500/50 hover:bg-purple-800/80 hover:scale-105 active:scale-95 transition-all shadow-[0_0_30px_rgba(168,85,247,0.3)] group cursor-pointer" title="Kopiera kod">
+                        <span id="current-match-id" class="tracking-[0.2em] font-mono select-all"></span>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-purple-400 group-hover:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
         </header>
 
         <div class="glass-panel p-5 rounded-[2.5rem] shadow-2xl relative overflow-hidden flex flex-col items-center border border-white/10">
@@ -430,13 +440,14 @@
                     if (data.playerWhite && data.playerWhite !== userId && data.playerBlack !== userId) return showToast("SEKTORN ÄR FULL");
                     onlinePlayerColor = (data.playerBlack === userId) ? BLACK : WHITE;
                     if (onlinePlayerColor === WHITE) await updateDoc(matchRef, { playerWhite: userId });
-                    currentMatchId = matchId; setupBoardDOM(); startOnlineGame(matchId);
+                    currentMatchId = matchId; startOnlineGame(matchId);
                 } else { showToast("ID SAKNAS"); }
         } catch (err) { console.error("Anslut match fel:", err); showToast("ANSLUTNINGSFEL"); }
         }
 
         function startOnlineGame(matchId) {
             gameMode = 'online';
+            setupBoardDOM();
             const o = getSafeEl('online-menu'), g = getSafeEl('game-container'), oi = getSafeEl('online-info'), cm = getSafeEl('current-match-id');
             if (o) o.classList.add('hidden'); if (g) g.classList.remove('hidden'); if (oi) oi.classList.remove('hidden'); if (cm) cm.innerText = matchId;
             const { db, appId, doc, onSnapshot } = window.fb;
@@ -569,6 +580,16 @@
         }
 
         function closeModal() { showMenu(); }
+        
+        function copyMatchId() {
+            const id = getEl('current-match-id')?.innerText;
+            if (id) {
+                navigator.clipboard.writeText(id)
+                    .then(() => showToast("FREKVENS KOPIERAD"))
+                    .catch(() => showToast("KUNDE INTE KOPIERA"));
+            }
+        }
+
         function serializeBoard(b) { return JSON.stringify(b); }
         function deserializeBoard(s) { return JSON.parse(s); }
         
