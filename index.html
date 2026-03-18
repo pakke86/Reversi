@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Reversi - Galaktiskt Kaos Online</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Three.js for the slick 3D station and starfield -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, onSnapshot, updateDoc, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const firebaseConfig = JSON.parse(__firebase_config);
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'reversi-space-multiplayer';
+        
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        window.fb = { db, auth, appId, doc, setDoc, getDoc, onSnapshot, updateDoc, collection, signInAnonymously, signInWithCustomToken };
+    </script>
+    <style>
+        body {
+            background: #050408; 
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .space-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none; }
+        
+        /* Scrolling Gradient Title */
+        .animated-title {
+            background: linear-gradient(to right, #10b981, #3b82f6, #8b5cf6, #10b981);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            animation: gradient-scroll 3s linear infinite;
+        }
+        @keyframes gradient-scroll {
+            0% { background-position: 0% center; }
+            100% { background-position: 200% center; }
+        }
+
+        .nebula { 
+            position: fixed; width: 150vmax; height: 150vmax; 
+            background: radial-gradient(circle, rgba(16, 185, 129, 0.15) 0%, rgba(59, 130, 246, 0.1) 30%, transparent 70%); 
+            top: -20%; left: -20%; z-index: -2; 
+            animation: nebula-drift 40s ease-in-out infinite alternate; 
+            filter: blur(80px); 
+        }
+
+        @keyframes nebula-drift { 0% { transform: translate(0, 0) rotate(0deg) scale(1); } 100% { transform: translate(5vw, 5vh) rotate(5deg) scale(1.1); } }
+
+        /* Fullscreen Three.js container */
+        #station-3d-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 0;
+            pointer-events: none;
+            transition: opacity 0.5s ease;
+        }
+
+        .glass-panel { background: rgba(15, 23, 42, 0.94); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.15); }
+        
+        .board-grid { 
+            display: grid; grid-template-columns: repeat(8, 1fr); width: 100%; max-width: min(85vw, 400px); 
+            aspect-ratio: 1 / 1; background-color: rgba(6, 78, 59, 0.85); 
+            box-shadow: 0 0 60px rgba(16, 185, 129, 0.4), inset 0 0 30px rgba(0,0,0,0.8); 
+            touch-action: manipulation; border-radius: 16px; border: 4px solid rgba(16, 185, 129, 0.6);
+            padding: 4px;
+        }
+        .cell { border: 1px solid rgba(4, 120, 87, 0.4); display: flex; align-items: center; justify-content: center; cursor: pointer; position: relative; perspective: 1000px; }
+        
+        .piece-container {
+            width: 88%; height: 88%; position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+            pointer-events: none;
+        }
+        .is-black { transform: rotateY(0deg); }
+        .is-white { transform: rotateY(180deg); }
+        .piece-side { position: absolute; width: 100%; height: 100%; border-radius: 50%; backface-visibility: hidden; box-shadow: 0 4px 8px rgba(0,0,0,0.5); }
+        .piece-black { background: radial-gradient(circle at 35% 35%, #555, #000); border: 1px solid #111; }
+        .piece-white { background: radial-gradient(circle at 35% 35%, #fff, #bbb); border: 1px solid #eee; transform: rotateY(180deg); }
+
+        .valid-move::after {
+            content: ''; width: 22%; height: 22%; background-color: rgba(255, 255, 255, 0.6); border-radius: 50%;
+            animation: pulse-dot 1s infinite; box-shadow: 0 0 8px white;
+        }
+        @keyframes pulse-dot { 0%, 100% { opacity: 0.3; } 50% { opacity: 0.9; } }
+        
+        #toast {
+            visibility: hidden; min-width: 250px; background-color: #f43f5e; color: #fff; text-align: center; border-radius: 12px; padding: 12px; position: fixed; z-index: 100; left: 50%; bottom: 20px; transform: translateX(-50%); font-weight: 800; font-size: 12px; text-transform: uppercase; border: 1px solid rgba(255,255,255,0.2);
+        }
+        #toast.show { visibility: visible; animation: slide-up-toast 0.4s forwards; }
+        @keyframes slide-up-toast { from { opacity: 0; transform: translate(-50%, 20px); } to { opacity: 1; transform: translate(-50%, 0); } }
+    </style>
+</head>
+<body class="text-white font-sans select-none">
+
+    <div class="space-bg">
+        <div class="nebula"></div>
+    </div>
+    
+    <div id="toast">SYSTEMFEL: Ingen signal!</div>
+
+    <!-- Startskärm -->
+    <div id="start-screen" class="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/40 backdrop-blur-3xl">
+        <!-- 3D STATION & STARFIELD CONTAINER -->
+        <div id="station-3d-container"></div>
+
+        <div class="glass-panel p-10 rounded-[3rem] border-2 border-emerald-500/50 max-w-sm w-full text-center space-y-10 shadow-[0_0_150px_rgba(16,185,129,0.3)] z-10">
+            <h1 class="text-7xl font-black italic tracking-tighter animated-title text-shadow-lg">REVERSI</h1>
+            <div class="space-y-4">
+                <button onclick="startGame('solo')" class="w-full bg-emerald-600 hover:bg-emerald-500 py-4 rounded-[2rem] font-black tracking-widest uppercase transition-all shadow-2xl hover:scale-105 active:scale-95 text-xs">Singelspelare vs CPU</button>
+                <button onclick="startGame('duo')" class="w-full bg-blue-600 hover:bg-blue-500 py-4 rounded-[2rem] font-black tracking-widest uppercase transition-all shadow-2xl hover:scale-105 active:scale-95 text-xs">Lokal Duo</button>
+                <button onclick="showOnlineMenu()" class="w-full bg-purple-600 hover:bg-purple-500 py-4 rounded-[2rem] font-black tracking-widest uppercase transition-all shadow-2xl hover:scale-105 active:scale-95 text-xs">Galaktisk Online</button>
+            </div>
+            <div class="pt-8 border-t border-white/10">
+                <p class="text-[10px] text-emerald-400/60 uppercase font-black tracking-[0.3em] mb-2">IDENTIFIKATIONS-DNA</p>
+                <div id="user-id-display" class="text-[9px] text-purple-300 font-mono break-all bg-black/60 p-3 rounded-xl border border-purple-500/30">LADDAR...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Online Meny -->
+    <div id="online-menu" class="hidden fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/95 backdrop-blur-3xl">
+        <div class="glass-panel p-10 rounded-[3rem] border-2 border-purple-500/50 max-w-sm w-full text-center space-y-8">
+            <h2 class="text-3xl font-black text-purple-400 italic uppercase">Terminal</h2>
+            <div class="space-y-4">
+                <button onclick="createOnlineMatch()" class="w-full bg-purple-600 py-5 rounded-[2rem] font-black uppercase text-xs tracking-[0.2em] shadow-lg">Skapa Sändning</button>
+                <input id="join-id-input" type="text" placeholder="MATCH-ID" class="w-full bg-black/70 border-2 border-purple-500/30 p-4 rounded-[2rem] text-center text-white placeholder-gray-700 font-mono uppercase focus:border-purple-400 focus:outline-none transition-all">
+                <button onclick="joinOnlineMatch()" class="w-full border-2 border-purple-500/50 py-4 rounded-[2rem] font-black uppercase text-xs tracking-[0.2em] hover:bg-purple-500/20 transition-all">Anslut till ID</button>
+                <button onclick="showMenu()" class="w-full text-gray-500 text-[10px] uppercase font-black tracking-widest pt-4 hover:text-white transition-colors">TILLBAKA</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Spelskärm -->
+    <div id="game-container" class="max-w-md w-full text-center space-y-4 relative z-10 hidden">
+        <header class="space-y-1">
+            <h1 class="text-4xl font-black tracking-tighter animated-title italic">REVERSI</h1>
+            <p id="mode-badge" class="text-[8px] text-blue-400 tracking-[0.4em] uppercase opacity-70"></p>
+            <div id="online-info" class="hidden text-[10px] text-purple-400 font-mono mt-1 tracking-wider uppercase">Frekvens: <span id="current-match-id" class="font-black bg-purple-900/40 px-3 py-1 rounded-lg border border-purple-500/30 select-all"></span></div>
+        </header>
+
+        <div class="glass-panel p-5 rounded-[2.5rem] shadow-2xl relative overflow-hidden flex flex-col items-center border border-white/10">
+            <div class="flex justify-between items-center w-full mb-3 px-2">
+                <div id="p1-container" class="flex flex-col items-center flex-1 transition-all">
+                    <div class="w-10 h-10 rounded-full piece-black border-2 border-gray-900 shadow-xl"></div>
+                    <span id="black-score" class="text-3xl font-black">2</span>
+                </div>
+                
+                <div class="flex flex-col items-center flex-1 space-y-2">
+                    <div id="turn-indicator" class="px-5 py-1.5 rounded-full bg-emerald-600/90 font-black text-[9px] tracking-widest uppercase shadow-lg animate-pulse">VÄNTAR</div>
+                    <button onclick="requestQuit()" class="text-[8px] font-black uppercase text-red-500/60 hover:text-red-400 tracking-[0.2em] border border-red-900/20 px-3 py-1 rounded-full transition-all">Abort Mission</button>
+                </div>
+
+                <div id="p2-container" class="flex flex-col items-center flex-1 transition-all">
+                    <div class="w-10 h-10 rounded-full piece-white border-2 border-gray-200 shadow-xl"></div>
+                    <span id="white-score" class="text-3xl font-black">2</span>
+                </div>
+            </div>
+            <div class="flex justify-between w-full px-6 text-[8px] uppercase font-black text-white/30 tracking-[0.3em]">
+                <span id="p1-label">Svart</span>
+                <span id="p2-label">Vit</span>
+            </div>
+        </div>
+
+        <div id="board" class="board-grid mx-auto"></div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirm-modal" class="hidden fixed inset-0 z-[60] flex items-center justify-center p-6 bg-black/98 backdrop-blur-3xl">
+        <div class="glass-panel p-12 rounded-[4rem] border-2 border-red-500/50 max-w-sm w-full text-center space-y-8">
+            <h2 class="text-3xl font-black text-red-500 italic uppercase">Ge upp?</h2>
+            <p class="text-gray-400 text-sm leading-relaxed font-bold italic">Flyr du fältet nu? Galaxen kommer aldrig att glömma detta ögonblick av feghet.</p>
+            <div class="flex flex-col space-y-4">
+                <button onclick="cancelQuit()" class="bg-gray-800 py-5 rounded-[2rem] font-black text-xs uppercase tracking-widest">Stanna och slåss</button>
+                <button onclick="confirmQuit()" class="bg-red-600 py-5 rounded-[2rem] font-black text-xs uppercase tracking-widest shadow-2xl">Ja, jag flyr!</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Final Message -->
+    <div id="message-box" class="hidden fixed inset-0 bg-black/98 flex items-center justify-center p-6 z-50 backdrop-blur-3xl">
+        <div class="glass-panel p-12 rounded-[5rem] border-2 border-emerald-500/50 max-w-sm w-full text-center space-y-12 shadow-[0_0_150px_rgba(16,185,129,0.2)]">
+            <h2 id="final-status" class="text-6xl font-black italic tracking-tighter text-emerald-400 uppercase">Mission Over</h2>
+            <p id="final-message" class="text-gray-300 text-xl font-black leading-relaxed italic"></p>
+            <button onclick="closeModal()" class="w-full bg-emerald-600 py-6 rounded-[2.5rem] font-black tracking-[0.3em] uppercase shadow-2xl hover:scale-110 active:scale-95 transition-transform">Back to Command</button>
+        </div>
+    </div>
+
+    <script>
+        const BLACK = 1, WHITE = 2, EMPTY = 0;
+        let board = Array(8).fill(null).map(() => Array(8).fill(EMPTY));
+        let currentPlayer = BLACK;
+        let gameOver = false;
+        let isCpuThinking = false;
+        let gameMode = 'solo'; 
+        let onlinePlayerColor = null;
+        let currentMatchId = null;
+        let unsubscribeMatch = null;
+        let userId = null;
+
+        const getEl = (id) => document.getElementById(id);
+
+        /* --- THREE.JS STATION & STARFIELD --- */
+        let scene, camera, renderer, stationGroup, starField;
+        
+        function initStation3D() {
+            const container = getEl('station-3d-container');
+            if (!container) return;
+
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.z = 12;
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            container.appendChild(renderer.domElement);
+
+            // GLOBAL STARFIELD (Full screen)
+            const starCount = 2000;
+            const starGeometry = new THREE.BufferGeometry();
+            const starPositions = new Float32Array(starCount * 3);
+            for(let i = 0; i < starCount; i++) {
+                starPositions[i*3] = (Math.random() - 0.5) * 120;
+                starPositions[i*3+1] = (Math.random() - 0.5) * 120;
+                starPositions[i*3+2] = (Math.random() - 0.5) * 60 - 20;
+            }
+            starGeometry.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
+            const starMaterial = new THREE.PointsMaterial({ color: 0xffffff, size: 0.1, transparent: true, opacity: 0.7 });
+            starField = new THREE.Points(starGeometry, starMaterial);
+            scene.add(starField);
+
+            stationGroup = new THREE.Group();
+            
+            // --- REVERSI SPLIT STATION ---
+            // Top (Black)
+            const topGeom = new THREE.CylinderGeometry(2.5, 2.5, 0.35, 64);
+            const topMat = new THREE.MeshStandardMaterial({ color: 0x111111, metalness: 0.9, roughness: 0.1 });
+            const topHalf = new THREE.Mesh(topGeom, topMat);
+            topHalf.position.y = 0.175;
+            stationGroup.add(topHalf);
+
+            // Bottom (White)
+            const botGeom = new THREE.CylinderGeometry(2.5, 2.5, 0.35, 64);
+            const botMat = new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 0.2, roughness: 0.3 });
+            const botHalf = new THREE.Mesh(botGeom, botMat);
+            botHalf.position.y = -0.175;
+            stationGroup.add(botHalf);
+
+            // --- STATION WINDOWS (Keeping windows, removing hulahoop and noses) ---
+            const windowCount = 24;
+            const windowGeom = new THREE.SphereGeometry(0.06, 8, 8);
+            const windowMat = new THREE.MeshBasicMaterial({ color: 0x00f2ff }); // Cyan windows
+            
+            for(let i = 0; i < windowCount; i++) {
+                const angle = (i / windowCount) * Math.PI * 2;
+                const win = new THREE.Mesh(windowGeom, windowMat);
+                win.position.set(Math.cos(angle) * 2.52, 0, Math.sin(angle) * 2.52);
+                stationGroup.add(win);
+            }
+
+            // NOTE: Torus ring and Red Lanterns have been removed as per user request ("clownnäsor" and "cyan ring").
+
+            updateStationPosition();
+            scene.add(stationGroup);
+
+            // Strong Lighting
+            const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
+            scene.add(ambientLight);
+            const mainLight = new THREE.DirectionalLight(0xffffff, 2.0);
+            mainLight.position.set(10, 10, 10);
+            scene.add(mainLight);
+
+            animateStation();
+        }
+
+        function updateStationPosition() {
+            if (!stationGroup) return;
+            const aspect = window.innerWidth / window.innerHeight;
+            // Shift to right/bottom nicely
+            stationGroup.position.set(aspect * 3.5, -3.5, 0);
+        }
+
+        function animateStation() {
+            requestAnimationFrame(animateStation);
+            if (stationGroup) {
+                stationGroup.rotation.y += 0.003;
+                stationGroup.rotation.z = Math.sin(Date.now() * 0.0003) * 0.1;
+            }
+            if (starField) {
+                starField.rotation.y += 0.0002;
+            }
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            if (!camera || !renderer) return;
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            updateStationPosition();
+        });
+
+        /* --- GAME LOGIC --- */
+        function setupBoardDOM() {
+            const bg = getEl('board');
+            if (!bg) return;
+            bg.innerHTML = '';
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.id = `cell-${r}-${c}`;
+                    cell.onclick = (e) => { e.preventDefault(); handleCellClick(r, c); };
+                    bg.appendChild(cell);
+                }
+            }
+        }
+
+        function showToast(msg) {
+            const t = getEl('toast');
+            if (!t) return;
+            t.innerText = msg;
+            t.className = "show";
+            setTimeout(() => { t.className = t.className.replace("show", ""); }, 3000);
+        }
+
+        async function initAuth() {
+            const { auth, signInWithCustomToken, signInAnonymously } = window.fb;
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+                userId = auth.currentUser.uid;
+                const display = getEl('user-id-display');
+                if (display) display.innerText = userId;
+            } catch (err) { showToast("KOSMISK RADIOSKUGGA"); }
+        }
+
+        const getSafeEl = (id) => document.getElementById(id);
+
+        function startGame(mode) {
+            gameMode = mode;
+            const s = getSafeEl('start-screen'), o = getSafeEl('online-menu'), g = getSafeEl('game-container');
+            const stationContainer = getSafeEl('station-3d-container');
+            if (stationContainer) stationContainer.style.opacity = '0';
+            if (s) s.classList.add('hidden');
+            if (o) o.classList.add('hidden');
+            if (g) g.classList.remove('hidden');
+            setupBoardDOM();
+            initBoard();
+        }
+
+        function showOnlineMenu() { 
+            const s = getSafeEl('start-screen'), o = getSafeEl('online-menu');
+            if (s) s.classList.add('hidden'); if (o) o.classList.remove('hidden'); 
+        }
+
+        function showMenu() {
+            if (unsubscribeMatch) { unsubscribeMatch(); unsubscribeMatch = null; }
+            const s = getSafeEl('start-screen'), o = getSafeEl('online-menu'), g = getSafeEl('game-container'), m = getSafeEl('message-box'), c = getSafeEl('confirm-modal');
+            const stationContainer = getSafeEl('station-3d-container');
+            if (stationContainer) stationContainer.style.opacity = '1';
+            if (s) s.classList.remove('hidden'); if (o) o.classList.add('hidden'); if (g) g.classList.add('hidden'); if (m) m.classList.add('hidden'); if (c) c.classList.add('hidden');
+        }
+
+        function requestQuit() { const c = getSafeEl('confirm-modal'); if (c) c.classList.remove('hidden'); }
+        function cancelQuit() { const c = getSafeEl('confirm-modal'); if (c) c.classList.add('hidden'); }
+        function confirmQuit() { showMenu(); }
+
+        async function createOnlineMatch() {
+            const { db, appId, doc, setDoc } = window.fb;
+            const matchId = Math.random().toString(36).substring(2, 8).toUpperCase();
+            currentMatchId = matchId; onlinePlayerColor = BLACK;
+            const initialData = { board: serializeBoard(getInitialBoard()), currentPlayer: BLACK, playerBlack: userId, playerWhite: null, gameOver: false };
+            try { await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'matches', matchId), initialData); startOnlineGame(matchId); } catch (err) { showToast("SÄNDNING MISSLYCKADES"); }
+        }
+
+        async function joinOnlineMatch() {
+            const { db, appId, doc, getDoc, updateDoc } = window.fb;
+            const input = getSafeEl('join-id-input');
+            const matchId = input ? input.value.trim().toUpperCase() : '';
+            if (!matchId) return showToast("SKRIV IN ID");
+            try {
+                const matchRef = doc(db, 'artifacts', appId, 'public', 'data', 'matches', matchId);
+                const matchSnap = await getDoc(matchRef);
+                if (matchSnap.exists()) {
+                    const data = matchSnap.data();
+                    if (data.playerWhite && data.playerWhite !== userId && data.playerBlack !== userId) return showToast("SEKTORN ÄR FULL");
+                    onlinePlayerColor = (data.playerBlack === userId) ? BLACK : WHITE;
+                    if (onlinePlayerColor === WHITE) await updateDoc(matchRef, { playerWhite: userId });
+                    currentMatchId = matchId; setupBoardDOM(); startOnlineGame(matchId);
+                } else { showToast("ID SAKNAS"); }
+            } catch (err) { showToast("ANSLUTNINGSFEL"); }
+        }
+
+        function startOnlineGame(matchId) {
+            gameMode = 'online';
+            const o = getSafeEl('online-menu'), g = getSafeEl('game-container'), oi = getSafeEl('online-info'), cm = getSafeEl('current-match-id');
+            if (o) o.classList.add('hidden'); if (g) g.classList.remove('hidden'); if (oi) oi.classList.remove('hidden'); if (cm) cm.innerText = matchId;
+            const { db, appId, doc, onSnapshot } = window.fb;
+            unsubscribeMatch = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'matches', matchId), (snap) => { if (snap.exists()) syncFromOnline(snap.data()); }, (err) => showToast("SIGNALSTÖRNING"));
+        }
+
+        function syncFromOnline(data) { board = deserializeBoard(data.board); currentPlayer = data.currentPlayer; gameOver = data.gameOver; updateStats(); updateTurnIndicator(); updateBoardDOM(); if (gameOver) endGame(); }
+        function getInitialBoard() { let b = Array(8).fill(null).map(() => Array(8).fill(EMPTY)); b[3][3] = WHITE; b[3][4] = BLACK; b[4][3] = BLACK; b[4][4] = WHITE; return b; }
+        function initBoard() { board = getInitialBoard(); currentPlayer = BLACK; gameOver = false; updateStats(); updateTurnIndicator(); updateBoardDOM(); }
+
+        function updateTurnIndicator() {
+            if (gameOver) return;
+            const p1c = getSafeEl('p1-container'), p2c = getSafeEl('p2-container'), indicator = getSafeEl('turn-indicator');
+            if (p1c) p1c.style.opacity = currentPlayer === BLACK ? "1" : "0.3";
+            if (p2c) p2c.style.opacity = currentPlayer === WHITE ? "1" : "0.3";
+            if (indicator) {
+                if (gameMode === 'online') {
+                    const isMyTurn = currentPlayer === onlinePlayerColor;
+                    indicator.innerText = isMyTurn ? "DIN TUR" : "VÄNTAR";
+                    indicator.className = isMyTurn ? "px-5 py-1.5 rounded-full bg-emerald-600 font-black text-[9px] tracking-widest uppercase animate-pulse shadow-lg" : "px-5 py-1.5 rounded-full bg-gray-800 font-black text-[9px] tracking-widest uppercase opacity-50";
+                } else {
+                    indicator.innerText = currentPlayer === BLACK ? "SVART TUR" : (isCpuThinking ? "XENO TÄNKER" : "VIT TUR");
+                    indicator.className = `px-5 py-1.5 rounded-full ${currentPlayer === BLACK ? 'bg-emerald-600' : 'bg-blue-600'} font-black text-[9px] tracking-widest uppercase animate-pulse shadow-xl`;
+                }
+            }
+        }
+
+        function updateBoardDOM() {
+            const validMoves = getValidMoves(currentPlayer);
+            const isHumanTurn = (gameMode === 'duo') || (gameMode === 'solo' && currentPlayer === BLACK) || (gameMode === 'online' && currentPlayer === onlinePlayerColor);
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    const cell = getSafeEl(`cell-${r}-${c}`);
+                    if (!cell) continue;
+                    cell.className = 'cell';
+                    if (isHumanTurn && !isCpuThinking && validMoves.some(m => m.r === r && m.c === c)) cell.classList.add('valid-move');
+                    let container = cell.querySelector('.piece-container');
+                    if (board[r][c] !== EMPTY) {
+                        if (!container) {
+                            container = document.createElement('div');
+                            container.className = 'piece-container';
+                            container.innerHTML = `<div class="piece-side piece-black"></div><div class="piece-side piece-white"></div>`;
+                            cell.appendChild(container);
+                        }
+                        const targetClass = board[r][c] === BLACK ? 'is-black' : 'is-white';
+                        if (!container.classList.contains(targetClass)) container.className = `piece-container ${targetClass}`;
+                    } else if (container) container.remove();
+                }
+            }
+        }
+
+        async function handleCellClick(r, c) {
+            const isHumanTurn = (gameMode === 'duo') || (gameMode === 'solo' && currentPlayer === BLACK) || (gameMode === 'online' && currentPlayer === onlinePlayerColor);
+            if (!isHumanTurn || isCpuThinking || gameOver) return;
+            const flips = getFlips(r, c, currentPlayer);
+            if (flips.length === 0) return;
+            if (gameMode === 'online') {
+                const { db, appId, doc, updateDoc } = window.fb;
+                const newBoard = JSON.parse(JSON.stringify(board));
+                newBoard[r][c] = currentPlayer;
+                flips.forEach(p => newBoard[p.r][p.c] = currentPlayer);
+                let nextPlayer = (currentPlayer === BLACK) ? WHITE : BLACK;
+                let nextGameOver = false;
+                if (!hasAnyValidMove(nextPlayer, newBoard)) { if (!hasAnyValidMove(currentPlayer, newBoard)) nextGameOver = true; else nextPlayer = currentPlayer; }
+                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'matches', currentMatchId), { board: serializeBoard(newBoard), currentPlayer: nextPlayer, gameOver: nextGameOver });
+            } else { applyMove(r, c, flips); }
+        }
+
+        function applyMove(r, c, flips) {
+            board[r][c] = currentPlayer;
+            flips.forEach(pos => board[pos.r][pos.c] = currentPlayer);
+            currentPlayer = (currentPlayer === BLACK) ? WHITE : BLACK;
+            updateBoardDOM(); updateStats(); updateTurnIndicator();
+            if (!hasAnyValidMove(BLACK) && !hasAnyValidMove(WHITE)) { setTimeout(endGame, 1000); return; }
+            if (!hasAnyValidMove(currentPlayer)) {
+                setTimeout(() => { currentPlayer = (currentPlayer === BLACK) ? WHITE : BLACK; updateTurnIndicator(); updateBoardDOM(); if (gameMode === 'solo' && currentPlayer === WHITE) cpuMove(); }, 800);
+            } else if (gameMode === 'solo' && currentPlayer === WHITE) { cpuMove(); }
+        }
+
+        function cpuMove() {
+            isCpuThinking = true; updateTurnIndicator(); updateBoardDOM();
+            setTimeout(() => {
+                const moves = getValidMoves(WHITE);
+                if (moves.length > 0) {
+                    moves.sort((a, b) => {
+                        const isCorner = (p) => (p.r === 0 || p.r === 7) && (p.c === 0 || p.c === 7);
+                        if (isCorner(a) && !isCorner(b)) return -1;
+                        if (!isCorner(a) && isCorner(b)) return 1;
+                        return b.flips.length - a.flips.length;
+                    });
+                    applyMove(moves[0].r, moves[0].c, moves[0].flips);
+                }
+                isCpuThinking = false; updateTurnIndicator(); updateBoardDOM();
+            }, 1800);
+        }
+
+        function getFlips(r, c, player, targetBoard = board) {
+            if (targetBoard[r][c] !== EMPTY) return [];
+            const opponent = (player === BLACK) ? WHITE : BLACK, directions = [[0,1],[0,-1],[1,0],[-1,0],[1,1],[1,-1],[-1,1],[-1,-1]];
+            let allFlips = [];
+            for (const [dr, dc] of directions) {
+                let currentFlips = [], nr = r + dr, nc = c + dc;
+                while (nr >= 0 && nr < 8 && nc >= 0 && nc < 8 && targetBoard[nr][nc] === opponent) { currentFlips.push({r: nr, c: nc}); nr += dr; nc += dc; }
+                if (nr >= 0 && nr < 8 && nc >= 0 && nc < 8 && targetBoard[nr][nc] === player && currentFlips.length > 0) allFlips = allFlips.concat(currentFlips);
+            }
+            return allFlips;
+        }
+
+        function getValidMoves(player, targetBoard = board) {
+            const moves = [];
+            for (let r = 0; r < 8; r++) { for (let c = 0; c < 8; c++) { const flips = getFlips(r, c, player, targetBoard); if (flips.length > 0) moves.push({r, c, flips}); } }
+            return moves;
+        }
+
+        function hasAnyValidMove(player, targetBoard = board) { for (let r = 0; r < 8; r++) { for (let c = 0; c < 8; c++) { if (getFlips(r, c, player, targetBoard).length > 0) return true; } } return false; }
+
+        function updateStats() {
+            let b = 0, w = 0; board.forEach(row => row.forEach(cell => { if (cell === BLACK) b++; if (cell === WHITE) w++; }));
+            const bl = getSafeEl('black-score'), wh = getSafeEl('white-score');
+            if (bl) bl.innerText = b; if (wh) wh.innerText = w;
+        }
+
+        function endGame() {
+            gameOver = true;
+            const bl = getSafeEl('black-score'), wh = getSafeEl('white-score'), status = getSafeEl('final-status'), msg = getSafeEl('final-message'), box = getSafeEl('message-box');
+            const b = bl ? parseInt(bl.innerText) : 0, w = wh ? parseInt(wh.innerText) : 0;
+            if (status) status.innerText = b > w ? "JORDEN SEGRADE" : (w > b ? "XENO SEGRADE" : "REMI");
+            if (msg) msg.innerText = b > w ? "Mörkret har skingrats. Galaxen är säker." : "Xeno-imperiet vann. Packa dina rymdväskor.";
+            if (box) box.classList.remove('hidden');
+        }
+
+        function closeModal() { showMenu(); }
+        function serializeBoard(b) { return JSON.stringify(b); }
+        function deserializeBoard(s) { return JSON.parse(s); }
+        
+        window.onload = () => { 
+            initAuth(); 
+            initStation3D(); 
+        };
+    </script>
+</body>
+</html>
