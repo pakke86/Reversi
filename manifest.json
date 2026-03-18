@@ -1,0 +1,17 @@
+{
+  "name": "Galaktisk Reversi",
+  "short_name": "Reversi",
+  "description": "Spela Reversi i rymden",
+  "start_url": "./index.html",
+  "display": "fullscreen",
+  "background_color": "#0b0e14",
+  "theme_color": "#10b981",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "type": "image/svg+xml",
+      "sizes": "192x192 512x512",
+      "purpose": "any maskable"
+    }
+  ]
+}

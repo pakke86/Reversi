@@ -5,6 +5,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Reversi - Galaktiskt Kaos Online</title>
+    
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#10b981">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="icon" type="image/svg+xml" href="icon.svg">
+    <link rel="apple-touch-icon" href="icon.svg">
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Three.js for the slick 3D station and starfield -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -429,9 +438,9 @@
 
         const sv_en = {
             'Singelspelare vs CPU': 'Singleplayer vs CPU', 'Lokal Duo': 'Local Duo', 'Galaktisk Online': 'Galactic Online',
-            'PÅGÅENDE SPEL': 'ACTIVE GAMES', 'Pågående Spel': 'Active Matches', 'DITT NICKNAME SKYLDIG STYRE': 'YOUR NICKNAME',
+            'PÅGÅENDE SPEL': 'ACTIVE GAMES', 'Pågående Spel': 'Active Matches', 'DITT NICKNAME': 'YOUR NICKNAME',
             'Terminal': 'Terminal', 'Skapa Sändning': 'Create Broadcast', 'SKRIV IN MATCH-ID': 'ENTER MATCH-ID', 'Anslut till ID': 'Join by ID',
-            'TILLBAKA': 'BACK', '← Meny': '← Menu', 'SÄNDNINGS-FREKVENS': 'BROADC. FREQUENCY', 'Svart': 'Black', 'Vit': 'White',
+            'TILLBAKA': 'BACK', '← Meny': '← Menu', 'SÄNDNINGS-FREKVENS': 'BROADCAST FREQ', 'Svart': 'Black', 'Vit': 'White',
             'Abort Mission': 'Abort Mission', 'Ge upp?': 'Give up?', 'Stanna och slåss': 'Stay and fight', 'Ja, jag flyr!': 'Yes, I flee!',
             'Mission Over': 'Mission Over', 'Back to Command': 'Back to Command', 'SÖKER MOTSTÅNDARE': 'SEARCHING FOR OPPONENT',
             'DIN TUR': 'YOUR TURN', 'VÄNTAR': 'WAITING', 'SVART TUR': 'BLACK TURN', 'XENO TÄNKER': 'XENO THINKING', 'VIT TUR': 'WHITE TURN',
@@ -440,7 +449,14 @@
             'Mörkrets kraft dominerar.': 'Darkness dominates.', 'Ljuset segrade galaxen.': 'Light conquered the galaxy.',
             'Ingen vann stjärnornas krig.': 'Nobody won the star wars.', 'Mörkret har skingrats. Galaxen är säker.': 'Galaxy relates safe now.',
             'Xeno-imperiet vann. Packa dina väskor.': 'Xeno won. Pack your bags.', 'Ett dött lopp i rymden.': 'Dead heat in space.',
-            'Söker genom galaxen...': 'Scanning galaxy...', 'INGA PÅGÅENDE SPEL': 'NO ACTIVE GAMES', 'AVSLUTAD': 'FINISHED', 'Flyr du fältet nu? Galaxen kommer aldrig att glömma detta ögonblick av feghet.': 'Fleeing the field now? The galaxy will never forget this cowardice.'
+            'Söker genom galaxen...': 'Scanning galaxy...', 'INGA PÅGÅENDE SPEL': 'NO ACTIVE GAMES', 'AVSLUTAD': 'FINISHED', 
+            'Flyr du fältet nu? Galaxen kommer aldrig att glömma detta ögonblick av feghet.': 'Fleeing the field now? The galaxy will never forget this cowardice.',
+            'SKRIV IN DITT NICKNAME!': 'ENTER YOUR NICKNAME!', 'FIREBASE SAKNAS': 'FIREBASE MISSING', 'SKRIV IN ID': 'ENTER MATCH-ID',
+            'SEKTORN ÄR FULL': 'SECTOR IS FULL', 'ID SAKNAS': 'ID NOT FOUND', 'ANSLUTNINGSFEL': 'CONNECTION ERROR', 'SÄNDNING MISSLYCKADES': 'BROADCAST FAILED',
+            'KOSMISK RADIOSKUGGA': 'COSMIC RADIO SHADOW', 'FREKVENS KOPIERAD': 'FREQUENCY COPIED', 'KUNDE INTE KOPIERA': 'COULD NOT COPY',
+            'VÄNTAR PÅ SPELARE 2...': 'WAITING FOR PLAYER 2...', 'MOTSTÅNDAREN GAV UPP!': 'OPPONENT GAVE UP!', 'SIGNALSTÖRNING': 'SIGNAL INTERFERENCE',
+            'SV / EN': 'SV / EN', 'STANNA STJÄRNOR': 'FREEZE STARS', 'Det är din tur att göra ett drag!': 'It is your turn to make a move!',
+            'Din motståndare fegade ur och gav upp!': 'Your opponent chickened out and gave up!'
         };
         const en_sv = {}; for (let k in sv_en) en_sv[sv_en[k]] = k;
 
@@ -465,15 +481,18 @@
             const dict = lang === 'en' ? sv_en : en_sv;
             document.querySelectorAll('button, h1, h2, p, span, div').forEach(n => {
                 if (n.childNodes.length === 1 && n.childNodes[0].nodeType === 3) {
-                    let txt = n.innerText.trim();
-                    if (dict[txt]) n.innerText = dict[txt];
+                    let txt = n.textContent.trim().replace(/\s+/g, ' ');
+                    if (dict[txt]) n.textContent = dict[txt];
                 }
             });
             document.querySelectorAll('input').forEach(n => {
                 if (n.placeholder && dict[n.placeholder]) n.placeholder = dict[n.placeholder];
             });
             const sbtn = getEl('toggle-stars-btn');
-            if (sbtn) sbtn.innerText = starsMoving ? t('STANNA STJÄRNOR') : (lang === 'en' ? 'MOVING STARS' : 'RÖRLIGA STJÄRNOR');
+            if (sbtn) {
+                if (lang === 'en') sbtn.innerText = starsMoving ? 'FREEZE STARS' : 'UNFREEZE STARS';
+                else sbtn.innerText = starsMoving ? 'STANNA STJÄRNOR' : 'RÖRLIGA STJÄRNOR';
+            }
         }
 
         /* --- THREE.JS STATION & STARFIELD --- */
@@ -593,11 +612,11 @@
         }
 
         function showToast(msg) {
-            const t = getEl('toast');
-            if (!t) return;
-            t.innerText = msg;
-            t.className = "show";
-            setTimeout(() => { t.className = t.className.replace("show", ""); }, 3000);
+            const tEl = getEl('toast');
+            if (!tEl) return;
+            tEl.innerText = t(msg);
+            tEl.className = "show";
+            setTimeout(() => { tEl.className = tEl.className.replace("show", ""); }, 3000);
         }
 
         async function initAuth() {
@@ -808,7 +827,9 @@
 
             if (abortedBy && abortedBy !== userId && !gameOver) {
                 if ("Notification" in window && Notification.permission === "granted") {
-                    new Notification("Galaktisk Reversi", { body: "Din motståndare fegade ur och gav upp!" });
+                    const msg = t('Din motståndare fegade ur och gav upp!');
+                    if (navigator.serviceWorker) navigator.serviceWorker.ready.then(r => r.showNotification("Galaktisk Reversi", { body: msg, icon: "icon.svg", vibrate: [200, 100, 200] })).catch(() => new Notification("Galaktisk Reversi", { body: msg, icon: "icon.svg" }));
+                    else new Notification("Galaktisk Reversi", { body: msg, icon: "icon.svg" });
                 }
                 showToast("MOTSTÅNDAREN GAV UPP!");
             }
@@ -816,7 +837,9 @@
             const isMyTurn = (currentPlayer === onlinePlayerColor);
             if (isMyTurn && !wasMyTurn && isOnlineMatchFull && !gameOver && !abortedBy) {
                 if (document.hidden && "Notification" in window && Notification.permission === "granted") {
-                    new Notification("Galaktisk Reversi", { body: "Det är din tur att göra ett drag!" });
+                    const msg = t('Det är din tur att göra ett drag!');
+                    if (navigator.serviceWorker) navigator.serviceWorker.ready.then(r => r.showNotification("Galaktisk Reversi", { body: msg, icon: "icon.svg", vibrate: [200, 100, 200] })).catch(() => new Notification("Galaktisk Reversi", { body: msg, icon: "icon.svg" }));
+                    else new Notification("Galaktisk Reversi", { body: msg, icon: "icon.svg" });
                 }
             }
             wasMyTurn = isMyTurn;
@@ -996,6 +1019,9 @@
         function deserializeBoard(s) { return JSON.parse(s); }
 
         window.onload = () => {
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('sw.js').catch(e => console.error('PWA fail:', e));
+            }
             initAuth();
             initStation3D();
             applyLang();
