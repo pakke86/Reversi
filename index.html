@@ -330,11 +330,13 @@
 
     <!-- Spelskärm -->
     <div id="game-container" class="max-w-md w-full text-center space-y-2 md:space-y-4 relative z-10 hidden">
-        <header class="space-y-1 md:space-y-2 relative">
-            <button id="back-to-menu-btn" onclick="backToActiveMatches()"
-                class="hidden absolute top-0 left-0 text-[10px] font-black text-gray-400 hover:text-white uppercase tracking-widest px-3 py-2 bg-white/5 rounded-xl transition-all">&larr;
-                Meny</button>
-            <h1 class="text-3xl md:text-4xl font-black tracking-tighter animated-title italic">REVERSI</h1>
+        <header class="space-y-1 md:space-y-2 relative flex flex-col items-center w-full">
+            <div class="w-full flex justify-start z-50 absolute top-[-10px] sm:top-[-20px] md:top-0 left-0 md:px-0">
+                <button id="back-to-menu-btn" onclick="backToActiveMatches()"
+                    class="hidden text-[10px] font-black text-white hover:text-emerald-400 uppercase tracking-widest px-4 py-2 bg-black/60 border border-white/20 rounded-xl transition-all shadow-xl backdrop-blur-md">&larr;
+                    Meny</button>
+            </div>
+            <h1 class="text-3xl md:text-4xl font-black tracking-tighter animated-title italic mt-6 md:mt-0 pt-2 md:pt-0">REVERSI</h1>
             <p id="mode-badge" class="text-[8px] text-blue-400 tracking-[0.4em] uppercase opacity-70"></p>
             <div id="online-info" class="hidden mt-4">
                 <div class="flex flex-col items-center justify-center gap-2">
