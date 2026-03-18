@@ -386,8 +386,7 @@
             gameMode = mode;
             setupBoardDOM();
             const s = getSafeEl('start-screen'), o = getSafeEl('online-menu'), g = getSafeEl('game-container');
-            const stationContainer = getSafeEl('station-3d-container');
-            if (stationContainer) stationContainer.style.opacity = '0';
+            if (stationGroup) stationGroup.visible = false;
             if (s) s.classList.add('hidden');
             if (o) o.classList.add('hidden');
             if (g) g.classList.remove('hidden');
@@ -396,16 +395,14 @@
 
         function showOnlineMenu() { 
             const s = getSafeEl('start-screen'), o = getSafeEl('online-menu');
-            const stationContainer = getSafeEl('station-3d-container');
-            if (stationContainer) stationContainer.style.opacity = '0';
+            if (stationGroup) stationGroup.visible = false;
             if (s) s.classList.add('hidden'); if (o) o.classList.remove('hidden'); 
         }
 
         function showMenu() {
             if (unsubscribeMatch) { unsubscribeMatch(); unsubscribeMatch = null; }
             const s = getSafeEl('start-screen'), o = getSafeEl('online-menu'), g = getSafeEl('game-container'), m = getSafeEl('message-box'), c = getSafeEl('confirm-modal');
-            const stationContainer = getSafeEl('station-3d-container');
-            if (stationContainer) stationContainer.style.opacity = '1';
+            if (stationGroup) stationGroup.visible = true;
             if (s) s.classList.remove('hidden'); if (o) o.classList.add('hidden'); if (g) g.classList.add('hidden'); if (m) m.classList.add('hidden'); if (c) c.classList.add('hidden');
         }
 
@@ -448,6 +445,7 @@
             gameMode = 'online';
             setupBoardDOM();
             const o = getSafeEl('online-menu'), g = getSafeEl('game-container'), oi = getSafeEl('online-info'), cm = getSafeEl('current-match-id');
+            if (stationGroup) stationGroup.visible = false;
             if (o) o.classList.add('hidden'); if (g) g.classList.remove('hidden'); if (oi) oi.classList.remove('hidden'); if (cm) cm.innerText = matchId;
             const { db, appId, doc, onSnapshot } = window.fb;
             unsubscribeMatch = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'matches', matchId), (snap) => { if (snap.exists()) syncFromOnline(snap.data()); }, (err) => showToast("SIGNALSTÖRNING"));
