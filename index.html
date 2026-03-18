@@ -59,7 +59,7 @@
 
         .nebula { 
             position: fixed; width: 150vmax; height: 150vmax; 
-            background: radial-gradient(circle, rgba(16, 185, 129, 0.15) 0%, rgba(59, 130, 246, 0.1) 30%, transparent 70%); 
+            background: radial-gradient(circle, rgba(16, 185, 129, 0.08) 0%, rgba(59, 130, 246, 0.05) 30%, transparent 70%); 
             top: -20%; left: -20%; z-index: -2; 
             animation: nebula-drift 40s ease-in-out infinite alternate; 
             filter: blur(80px); 
@@ -127,8 +127,8 @@
     <div id="station-3d-container"></div>
 
     <!-- Startskärm -->
-    <div id="start-screen" class="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/50">
-        <div class="glass-panel p-10 rounded-[3rem] border-2 border-emerald-500/50 max-w-sm w-full text-center space-y-10 shadow-[0_0_150px_rgba(16,185,129,0.3)] z-10">
+    <div id="start-screen" class="fixed inset-0 z-50 flex items-center justify-center p-6">
+        <div class="glass-panel p-10 rounded-[3rem] border-2 border-emerald-500/50 max-w-sm w-full text-center space-y-10 shadow-[0_0_120px_rgba(16,185,129,0.15)] z-10">
             <h1 class="text-7xl font-black italic tracking-tighter animated-title text-shadow-lg">REVERSI</h1>
             <div class="space-y-4">
                 <button onclick="startGame('solo')" class="w-full bg-emerald-600 hover:bg-emerald-500 py-4 rounded-[2rem] font-black tracking-widest uppercase transition-all shadow-2xl hover:scale-105 active:scale-95 text-xs">Singelspelare vs CPU</button>
@@ -143,7 +143,7 @@
     </div>
 
     <!-- Online Meny -->
-    <div id="online-menu" class="hidden fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/95 backdrop-blur-3xl">
+    <div id="online-menu" class="hidden fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/80 backdrop-blur-md">
         <div class="glass-panel p-10 rounded-[3rem] border-2 border-purple-500/50 max-w-sm w-full text-center space-y-8">
             <h2 class="text-3xl font-black text-purple-400 italic uppercase">Terminal</h2>
             <div class="space-y-4">
@@ -247,7 +247,7 @@
             container.appendChild(renderer.domElement);
 
             // GLOBAL STARFIELD (Full screen)
-            const starCount = 2000;
+            const starCount = 3500;
             const starGeometry = new THREE.BufferGeometry();
             const starPositions = new Float32Array(starCount * 3);
             for(let i = 0; i < starCount; i++) {
@@ -256,7 +256,7 @@
                 starPositions[i*3+2] = (Math.random() - 0.5) * 60 - 20;
             }
             starGeometry.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
-            const starMaterial = new THREE.PointsMaterial({ color: 0xffffff, size: 0.1, transparent: true, opacity: 0.7 });
+            const starMaterial = new THREE.PointsMaterial({ color: 0xffffff, size: 0.2, transparent: true, opacity: 0.95 });
             starField = new THREE.Points(starGeometry, starMaterial);
             scene.add(starField);
 
