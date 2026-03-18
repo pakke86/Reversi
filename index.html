@@ -173,26 +173,22 @@
             </div>
         </header>
 
-        <div class="glass-panel p-5 rounded-[2.5rem] shadow-2xl relative overflow-hidden flex flex-col items-center border border-white/10">
-            <div class="flex justify-between items-center w-full mb-3 px-2">
-                <div id="p1-container" class="flex flex-col items-center flex-1 transition-all">
-                    <div class="w-10 h-10 rounded-full piece-black border-2 border-gray-900 shadow-xl"></div>
-                    <span id="black-score" class="text-3xl font-black">2</span>
-                </div>
-                
-                <div class="flex flex-col items-center flex-1 space-y-2">
-                    <div id="turn-indicator" class="px-5 py-1.5 rounded-full bg-emerald-600/90 font-black text-[9px] tracking-widest uppercase shadow-lg animate-pulse">VÄNTAR</div>
-                    <button onclick="requestQuit()" class="text-[8px] font-black uppercase text-red-500/60 hover:text-red-400 tracking-[0.2em] border border-red-900/20 px-3 py-1 rounded-full transition-all">Abort Mission</button>
-                </div>
-
-                <div id="p2-container" class="flex flex-col items-center flex-1 transition-all">
-                    <div class="w-10 h-10 rounded-full piece-white border-2 border-gray-200 shadow-xl"></div>
-                    <span id="white-score" class="text-3xl font-black">2</span>
-                </div>
+        <div class="glass-panel py-5 px-3 rounded-[3rem] shadow-2xl relative overflow-hidden flex justify-between items-center border border-white/10 w-full mb-2">
+            <div id="p1-container" class="flex flex-col items-center flex-1 transition-all">
+                <div class="w-12 h-12 mb-2 rounded-full piece-black border-2 border-gray-900 shadow-xl"></div>
+                <span id="black-score" class="text-4xl font-black leading-none">2</span>
+                <span id="p1-label" class="text-[10px] uppercase font-black text-white/40 tracking-[0.3em] mt-2">Svart</span>
             </div>
-            <div class="flex justify-between w-full px-6 text-[8px] uppercase font-black text-white/30 tracking-[0.3em]">
-                <span id="p1-label">Svart</span>
-                <span id="p2-label">Vit</span>
+            
+            <div class="flex flex-col items-center flex-[1.5] space-y-4 px-2">
+                <div id="turn-indicator" class="px-5 py-2.5 rounded-full bg-emerald-600/90 font-black text-xs tracking-[0.2em] uppercase shadow-lg animate-pulse whitespace-nowrap">VÄNTAR</div>
+                <button onclick="requestQuit()" class="text-[10px] font-black uppercase text-red-500/80 hover:text-red-400 tracking-[0.2em] border border-red-900/40 px-4 py-2 rounded-full transition-all hover:bg-red-900/20">Abort Mission</button>
+            </div>
+
+            <div id="p2-container" class="flex flex-col items-center flex-1 transition-all">
+                <div class="w-12 h-12 mb-2 rounded-full piece-white border-2 border-gray-200 shadow-xl"></div>
+                <span id="white-score" class="text-4xl font-black leading-none">2</span>
+                <span id="p2-label" class="text-[10px] uppercase font-black text-white/40 tracking-[0.3em] mt-2">Vit</span>
             </div>
         </div>
 
@@ -231,6 +227,7 @@
         let currentMatchId = null;
         let unsubscribeMatch = null;
         let userId = null;
+        let isOnlineMatchFull = false;
 
         const getEl = (id) => document.getElementById(id);
 
@@ -388,8 +385,6 @@
         function startGame(mode) {
             gameMode = mode;
             const s = getSafeEl('start-screen'), o = getSafeEl('online-menu'), g = getSafeEl('game-container');
-            const stationContainer = getSafeEl('station-3d-container');
-            if (stationContainer) stationContainer.style.opacity = '0';
             if (s) s.classList.add('hidden');
             if (o) o.classList.add('hidden');
             if (g) g.classList.remove('hidden');
@@ -405,8 +400,6 @@
         function showMenu() {
             if (unsubscribeMatch) { unsubscribeMatch(); unsubscribeMatch = null; }
             const s = getSafeEl('start-screen'), o = getSafeEl('online-menu'), g = getSafeEl('game-container'), m = getSafeEl('message-box'), c = getSafeEl('confirm-modal');
-            const stationContainer = getSafeEl('station-3d-container');
-            if (stationContainer) stationContainer.style.opacity = '1';
             if (s) s.classList.remove('hidden'); if (o) o.classList.add('hidden'); if (g) g.classList.add('hidden'); if (m) m.classList.add('hidden'); if (c) c.classList.add('hidden');
         }
 
@@ -454,7 +447,16 @@
             unsubscribeMatch = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'matches', matchId), (snap) => { if (snap.exists()) syncFromOnline(snap.data()); }, (err) => showToast("SIGNALSTÖRNING"));
         }
 
-        function syncFromOnline(data) { board = deserializeBoard(data.board); currentPlayer = data.currentPlayer; gameOver = data.gameOver; updateStats(); updateTurnIndicator(); updateBoardDOM(); if (gameOver) endGame(); }
+        function syncFromOnline(data) { 
+            isOnlineMatchFull = !!(data.playerBlack && data.playerWhite);
+            board = deserializeBoard(data.board); 
+            currentPlayer = data.currentPlayer; 
+            gameOver = data.gameOver; 
+            updateStats(); 
+            updateTurnIndicator(); 
+            updateBoardDOM(); 
+            if (gameOver) endGame(); 
+        }
         function getInitialBoard() { let b = Array(8).fill(null).map(() => Array(8).fill(EMPTY)); b[3][3] = WHITE; b[3][4] = BLACK; b[4][3] = BLACK; b[4][4] = WHITE; return b; }
         function initBoard() { board = getInitialBoard(); currentPlayer = BLACK; gameOver = false; updateStats(); updateTurnIndicator(); updateBoardDOM(); }
 
@@ -465,12 +467,17 @@
             if (p2c) p2c.style.opacity = currentPlayer === WHITE ? "1" : "0.3";
             if (indicator) {
                 if (gameMode === 'online') {
-                    const isMyTurn = currentPlayer === onlinePlayerColor;
-                    indicator.innerText = isMyTurn ? "DIN TUR" : "VÄNTAR";
-                    indicator.className = isMyTurn ? "px-5 py-1.5 rounded-full bg-emerald-600 font-black text-[9px] tracking-widest uppercase animate-pulse shadow-lg" : "px-5 py-1.5 rounded-full bg-gray-800 font-black text-[9px] tracking-widest uppercase opacity-50";
+                    if (!isOnlineMatchFull) {
+                        indicator.innerText = "SÖKER MOTSTÅNDARE";
+                        indicator.className = "px-5 py-2.5 whitespace-nowrap rounded-full bg-yellow-600 font-black text-xs tracking-widest uppercase animate-pulse shadow-lg";
+                    } else {
+                        const isMyTurn = currentPlayer === onlinePlayerColor;
+                        indicator.innerText = isMyTurn ? "DIN TUR" : "VÄNTAR";
+                        indicator.className = isMyTurn ? "px-6 py-2.5 whitespace-nowrap rounded-full bg-emerald-600 font-black text-xs tracking-widest uppercase animate-pulse shadow-lg" : "px-6 py-2.5 whitespace-nowrap rounded-full bg-gray-800 font-black text-xs tracking-widest uppercase opacity-50";
+                    }
                 } else {
                     indicator.innerText = currentPlayer === BLACK ? "SVART TUR" : (isCpuThinking ? "XENO TÄNKER" : "VIT TUR");
-                    indicator.className = `px-5 py-1.5 rounded-full ${currentPlayer === BLACK ? 'bg-emerald-600' : 'bg-blue-600'} font-black text-[9px] tracking-widest uppercase animate-pulse shadow-xl`;
+                    indicator.className = `px-5 py-2.5 whitespace-nowrap rounded-full ${currentPlayer === BLACK ? 'bg-emerald-600' : 'bg-blue-600'} font-black text-xs tracking-widest uppercase animate-pulse shadow-xl`;
                 }
             }
         }
@@ -502,6 +509,10 @@
         async function handleCellClick(r, c) {
             const isHumanTurn = (gameMode === 'duo') || (gameMode === 'solo' && currentPlayer === BLACK) || (gameMode === 'online' && currentPlayer === onlinePlayerColor);
             if (!isHumanTurn || isCpuThinking || gameOver) return;
+            if (gameMode === 'online' && !isOnlineMatchFull) {
+                showToast("VÄNTAR PÅ SPELARE 2...");
+                return;
+            }
             const flips = getFlips(r, c, currentPlayer);
             if (flips.length === 0) return;
             if (gameMode === 'online') {
