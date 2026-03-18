@@ -263,23 +263,27 @@
                     class="w-full bg-purple-600 hover:bg-purple-500 py-4 rounded-[2rem] font-black tracking-widest uppercase transition-all shadow-2xl hover:scale-105 active:scale-95 text-xs">Galaktisk
                     Online</button>
                 <button id="reconnect-btn" onclick="showActiveMatchesMenu()"
-                    class="w-full border-2 border-yellow-500/50 hover:bg-yellow-500/20 py-4 rounded-[2rem] font-black tracking-widest uppercase transition-all shadow-2xl hover:scale-105 active:scale-95 text-xs text-yellow-400">PÅGÅENDE SPEL</button>
+                    class="w-full border-2 border-yellow-500/50 hover:bg-yellow-500/20 py-4 rounded-[2rem] font-black tracking-widest uppercase transition-all shadow-2xl hover:scale-105 active:scale-95 text-xs text-yellow-400">PÅGÅENDE
+                    SPEL</button>
             </div>
-            <div class="pt-8 border-t border-white/10">
-                <p class="text-[10px] text-emerald-400/60 uppercase font-black tracking-[0.3em] mb-2">IDENTIFIKATIONS-DNA</p>
-                <div id="user-id-display" class="text-[9px] text-purple-300 font-mono break-all bg-black/60 p-3 rounded-xl border border-purple-500/30">LADDAR...</div>
+            <div class="pt-8 border-t border-white/10 flex justify-center gap-4">
+                <button id="toggle-stars-btn" onclick="toggleStars()" class="w-full text-[10px] text-emerald-400/60 hover:text-emerald-400 uppercase font-black tracking-[0.2em] bg-black/40 px-4 py-4 rounded-xl transition-all border border-emerald-500/30">STANNA STJÄRNOR</button>
+                <button onclick="toggleLang()" class="w-full text-[10px] text-emerald-400/60 hover:text-emerald-400 uppercase font-black tracking-[0.2em] bg-black/40 px-4 py-4 rounded-xl transition-all border border-emerald-500/30">SV / EN</button>
             </div>
         </div>
     </div>
 
     <!-- Aktiva Matcher Meny -->
-    <div id="active-matches-menu" class="hidden fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/80 backdrop-blur-md">
-        <div class="glass-panel p-10 rounded-[3rem] border-2 border-yellow-500/50 max-w-md w-full text-center space-y-8 flex flex-col max-h-[80vh]">
+    <div id="active-matches-menu"
+        class="hidden fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/80 backdrop-blur-md">
+        <div
+            class="glass-panel p-10 rounded-[3rem] border-2 border-yellow-500/50 max-w-md w-full text-center space-y-8 flex flex-col max-h-[80vh]">
             <h2 class="text-3xl font-black text-yellow-400 italic uppercase">Pågående Spel</h2>
             <div id="matches-list" class="flex-1 overflow-y-auto space-y-3 p-2 custom-scrollbar">
                 <!-- Matches injected here -->
             </div>
-            <button onclick="showMenu()" class="w-full text-gray-500 text-[10px] uppercase font-black tracking-widest hover:text-white transition-colors mt-4">TILLBAKA</button>
+            <button onclick="showMenu()"
+                class="w-full text-gray-500 text-[10px] uppercase font-black tracking-widest hover:text-white transition-colors mt-4">TILLBAKA</button>
         </div>
     </div>
 
@@ -291,7 +295,9 @@
             <h2 class="text-3xl font-black text-purple-400 italic uppercase">Terminal</h2>
             <div class="space-y-4">
                 <div>
-                    <input id="nickname-input" type="text" placeholder="DITT NICKNAME SKYLDIG STYRE" onchange="localStorage.setItem('reversi_nickname', this.value.trim())" class="w-full text-xs text-center text-white bg-black/60 p-4 rounded-[2rem] border-2 border-purple-500/30 focus:border-purple-400 focus:outline-none transition-all font-black uppercase mb-4 shadow-xl">
+                    <input id="nickname-input" type="text" placeholder="DITT NICKNAME"
+                        onchange="localStorage.setItem('reversi_nickname', this.value.trim())"
+                        class="w-full text-xs text-center text-white bg-black/60 p-4 rounded-[2rem] border-2 border-purple-500/30 focus:border-purple-400 focus:outline-none transition-all font-black uppercase mb-4 shadow-xl">
                 </div>
                 <button onclick="createOnlineMatch()"
                     class="w-full bg-purple-600 py-5 rounded-[2rem] font-black uppercase text-xs tracking-[0.2em] shadow-lg">Skapa
@@ -311,7 +317,9 @@
     <!-- Spelskärm -->
     <div id="game-container" class="max-w-md w-full text-center space-y-4 relative z-10 hidden">
         <header class="space-y-2 relative">
-            <button id="back-to-menu-btn" onclick="backToActiveMatches()" class="hidden absolute top-0 left-0 text-[10px] font-black text-gray-400 hover:text-white uppercase tracking-widest px-3 py-2 bg-white/5 rounded-xl transition-all">&larr; Meny</button>
+            <button id="back-to-menu-btn" onclick="backToActiveMatches()"
+                class="hidden absolute top-0 left-0 text-[10px] font-black text-gray-400 hover:text-white uppercase tracking-widest px-3 py-2 bg-white/5 rounded-xl transition-all">&larr;
+                Meny</button>
             <h1 class="text-4xl font-black tracking-tighter animated-title italic">REVERSI</h1>
             <p id="mode-badge" class="text-[8px] text-blue-400 tracking-[0.4em] uppercase opacity-70"></p>
             <div id="online-info" class="hidden mt-4">
@@ -413,6 +421,61 @@
 
         const getEl = (id) => document.getElementById(id);
 
+        let starsMoving = true;
+        function toggleStars() {
+            starsMoving = !starsMoving;
+            applyLang();
+        }
+
+        const sv_en = {
+            'Singelspelare vs CPU': 'Singleplayer vs CPU', 'Lokal Duo': 'Local Duo', 'Galaktisk Online': 'Galactic Online',
+            'PÅGÅENDE SPEL': 'ACTIVE GAMES', 'Pågående Spel': 'Active Matches', 'DITT NICKNAME SKYLDIG STYRE': 'YOUR NICKNAME',
+            'Terminal': 'Terminal', 'Skapa Sändning': 'Create Broadcast', 'SKRIV IN MATCH-ID': 'ENTER MATCH-ID', 'Anslut till ID': 'Join by ID',
+            'TILLBAKA': 'BACK', '← Meny': '← Menu', 'SÄNDNINGS-FREKVENS': 'BROADC. FREQUENCY', 'Svart': 'Black', 'Vit': 'White',
+            'Abort Mission': 'Abort Mission', 'Ge upp?': 'Give up?', 'Stanna och slåss': 'Stay and fight', 'Ja, jag flyr!': 'Yes, I flee!',
+            'Mission Over': 'Mission Over', 'Back to Command': 'Back to Command', 'SÖKER MOTSTÅNDARE': 'SEARCHING FOR OPPONENT',
+            'DIN TUR': 'YOUR TURN', 'VÄNTAR': 'WAITING', 'SVART TUR': 'BLACK TURN', 'XENO TÄNKER': 'XENO THINKING', 'VIT TUR': 'WHITE TURN',
+            'AVBRUTEN': 'ABORTED', 'REMI': 'DRAW', 'JORDEN SEGRADE': 'EARTH VICTORIOUS', 'XENO SEGRADE': 'XENO VICTORIOUS',
+            'Du övergav din post!': 'You abandoned your post!', 'Din motståndare har övergett spelet': 'Opponent fled the game',
+            'Mörkrets kraft dominerar.': 'Darkness dominates.', 'Ljuset segrade galaxen.': 'Light conquered the galaxy.',
+            'Ingen vann stjärnornas krig.': 'Nobody won the star wars.', 'Mörkret har skingrats. Galaxen är säker.': 'Galaxy relates safe now.',
+            'Xeno-imperiet vann. Packa dina väskor.': 'Xeno won. Pack your bags.', 'Ett dött lopp i rymden.': 'Dead heat in space.',
+            'Söker genom galaxen...': 'Scanning galaxy...', 'INGA PÅGÅENDE SPEL': 'NO ACTIVE GAMES', 'AVSLUTAD': 'FINISHED', 'Flyr du fältet nu? Galaxen kommer aldrig att glömma detta ögonblick av feghet.': 'Fleeing the field now? The galaxy will never forget this cowardice.'
+        };
+        const en_sv = {}; for (let k in sv_en) en_sv[sv_en[k]] = k;
+
+        function t(str) {
+            let lang = localStorage.getItem('reversi_lang') || 'sv';
+            if (lang === 'en' && sv_en[str]) return sv_en[str];
+            if (lang === 'sv' && en_sv[str]) return en_sv[str];
+            return str;
+        }
+
+        function toggleLang() {
+            let userLang = localStorage.getItem('reversi_lang') || 'sv';
+            localStorage.setItem('reversi_lang', userLang === 'sv' ? 'en' : 'sv');
+            applyLang();
+            updateTurnIndicator();
+            const mb = getEl('message-box');
+            if (mb && !mb.classList.contains('hidden') && gameOver) endGame();
+        }
+
+        function applyLang() {
+            let lang = localStorage.getItem('reversi_lang') || 'sv';
+            const dict = lang === 'en' ? sv_en : en_sv;
+            document.querySelectorAll('button, h1, h2, p, span, div').forEach(n => {
+                if (n.childNodes.length === 1 && n.childNodes[0].nodeType === 3) {
+                    let txt = n.innerText.trim();
+                    if (dict[txt]) n.innerText = dict[txt];
+                }
+            });
+            document.querySelectorAll('input').forEach(n => {
+                if (n.placeholder && dict[n.placeholder]) n.placeholder = dict[n.placeholder];
+            });
+            const sbtn = getEl('toggle-stars-btn');
+            if (sbtn) sbtn.innerText = starsMoving ? t('STANNA STJÄRNOR') : (lang === 'en' ? 'MOVING STARS' : 'RÖRLIGA STJÄRNOR');
+        }
+
         /* --- THREE.JS STATION & STARFIELD --- */
         let scene, camera, renderer, stationGroup, starField;
 
@@ -495,11 +558,11 @@
 
         function animateStation() {
             requestAnimationFrame(animateStation);
-            if (stationGroup) {
+            if (stationGroup && starsMoving) {
                 stationGroup.rotation.y += 0.003;
                 stationGroup.rotation.z = Math.sin(Date.now() * 0.0003) * 0.1;
             }
-            if (starField) {
+            if (starField && starsMoving) {
                 starField.rotation.y += 0.0002;
             }
             renderer.render(scene, camera);
@@ -552,14 +615,8 @@
                     await signInAnonymously(auth);
                 }
                 userId = auth.currentUser.uid;
-                const display = getEl('user-id-display');
-                if (display) display.innerText = userId;
-                const nickInput = getEl('nickname-input');
-                if (nickInput) nickInput.value = localStorage.getItem('reversi_nickname') || '';
             } catch (err) {
                 console.error("Firebase Auth Error:", err);
-                const display = getEl('user-id-display');
-                if (display) display.innerText = "ÅTKOMST NEKAD";
                 showToast("KOSMISK RADIOSKUGGA");
             }
         }
@@ -581,6 +638,7 @@
             const s = getSafeEl('start-screen'), o = getSafeEl('online-menu');
             if (stationGroup) stationGroup.visible = false;
             if (s) s.classList.add('hidden'); if (o) o.classList.remove('hidden');
+            applyLang();
         }
 
         function showMenu() {
@@ -593,39 +651,40 @@
         async function showActiveMatchesMenu() {
             const s = getSafeEl('start-screen'), am = getSafeEl('active-matches-menu'), g = getSafeEl('game-container');
             if (s) s.classList.add('hidden'); if (g) g.classList.add('hidden'); if (am) am.classList.remove('hidden');
-            
+
             const listEl = getSafeEl('matches-list');
             if (!listEl) return;
-            listEl.innerHTML = '<div class="text-white/50 text-sm italic py-4">Söker genom galaxen...</div>';
-            
+            listEl.innerHTML = `<div class="text-white/50 text-sm italic py-4">${t('Söker genom galaxen...')}</div>`;
+
             if (!window.fb || !window.fb.db || !userId) return;
 
             try {
                 const { db, appId, collection, query, where, getDocs } = window.fb;
                 const matchesRef = collection(db, 'artifacts', appId, 'public', 'data', 'matches');
-                const [snap1, snap2] = await Promise.all([ getDocs(query(matchesRef, where('playerBlack', '==', userId))), getDocs(query(matchesRef, where('playerWhite', '==', userId))) ]);
-                
+                const [snap1, snap2] = await Promise.all([getDocs(query(matchesRef, where('playerBlack', '==', userId))), getDocs(query(matchesRef, where('playerWhite', '==', userId)))]);
+
                 let matches = [];
                 snap1.forEach(doc => { if (localStorage.getItem('hide_match_' + doc.id) !== 'true') matches.push({ id: doc.id, ...doc.data() }); });
                 snap2.forEach(doc => { if (localStorage.getItem('hide_match_' + doc.id) !== 'true' && !matches.find(m => m.id === doc.id)) matches.push({ id: doc.id, ...doc.data() }); });
-                
+
                 if (matches.length === 0) {
-                    listEl.innerHTML = '<div class="text-gray-400 text-sm font-black py-4">INGA PÅGÅENDE SPEL</div>';
+                    listEl.innerHTML = `<div class="text-gray-400 text-sm font-black py-4">${t('INGA PÅGÅENDE SPEL')}</div>`;
                     return;
                 }
-                
+
                 matches.sort((a, b) => (a.gameOver === b.gameOver ? 0 : a.gameOver ? 1 : -1));
                 listEl.innerHTML = matches.map(m => {
                     const amIBlack = (m.playerBlack === userId);
-                    const opponentNick = amIBlack ? (m.playerWhiteNick || 'Väntar...') : (m.playerBlackNick || 'Okänd');
+                    const opponentNick = amIBlack ? (m.playerWhiteNick || t('VÄNTAR')) : (m.playerBlackNick || 'Okänd');
                     const myTurn = !m.gameOver && ((m.currentPlayer === BLACK && amIBlack) || (m.currentPlayer === WHITE && !amIBlack));
                     const statusText = m.abortedBy ? "AVBRUTEN" : (m.gameOver ? "AVSLUTAD" : (myTurn ? "DIN TUR" : "VÄNTAR"));
                     const statusColor = m.abortedBy ? "text-red-400" : (m.gameOver ? "text-gray-500" : (myTurn ? "text-emerald-400" : "text-yellow-500"));
                     return `<button onclick="resumeMatch('${m.id}')" class="w-full bg-black/40 border border-white/10 hover:border-yellow-500/50 p-4 rounded-2xl flex flex-col items-start transition-all hover:bg-white/5 active:scale-95 text-left mb-2">
-                            <div class="flex justify-between w-full items-center"><span class="font-black text-white text-sm uppercase">VS ${opponentNick}</span><span class="font-black border border-white/20 p-1 rounded-md ${statusColor} text-[10px] tracking-widest">${statusText}</span></div>
+                            <div class="flex justify-between w-full items-center"><span class="font-black text-white text-sm uppercase">VS ${opponentNick}</span><span class="font-black border border-white/20 p-1 rounded-md ${statusColor} text-[10px] tracking-widest">${t(statusText)}</span></div>
                             <div class="text-[9px] text-gray-500 font-mono mt-1">ID: ${m.id}</div></button>`;
                 }).join('');
-            } catch(e) { console.error(e); listEl.innerHTML = '<div class="text-red-500 text-sm font-black py-4">NÄTVERKSFEL</div>'; }
+                applyLang();
+            } catch (e) { console.error(e); listEl.innerHTML = '<div class="text-red-500 text-sm font-black py-4">NÄTVERKSFEL</div>'; }
         }
 
         function resumeMatch(matchId) {
@@ -644,17 +703,17 @@
 
         function requestQuit() { const c = getSafeEl('confirm-modal'); if (c) c.classList.remove('hidden'); }
         function cancelQuit() { const c = getSafeEl('confirm-modal'); if (c) c.classList.add('hidden'); }
-        
-        async function confirmQuit() { 
+
+        async function confirmQuit() {
             const c = getSafeEl('confirm-modal'); if (c) c.classList.add('hidden');
             if (gameMode === 'online' && currentMatchId && !gameOver) {
                 try {
                     const { db, appId, doc, updateDoc } = window.fb;
                     await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'matches', currentMatchId), { gameOver: true, abortedBy: userId });
-                } catch(e) { console.error(e); }
+                } catch (e) { console.error(e); }
                 localStorage.setItem('hide_match_' + currentMatchId, 'true');
             }
-            showMenu(); 
+            showMenu();
         }
 
         async function createOnlineMatch() {
@@ -667,15 +726,15 @@
                 return;
             }
             if (nickEl) localStorage.setItem('reversi_nickname', userNick);
-            
+
             const { db, appId, doc, setDoc } = window.fb;
             const matchId = Math.random().toString(36).substring(2, 8).toUpperCase();
             currentMatchId = matchId; onlinePlayerColor = BLACK;
-            const initialData = { 
-                board: serializeBoard(getInitialBoard()), currentPlayer: BLACK, 
-                playerBlack: userId, playerWhite: null, 
-                playerBlackNick: userNick, playerWhiteNick: null, 
-                gameOver: false, abortedBy: null 
+            const initialData = {
+                board: serializeBoard(getInitialBoard()), currentPlayer: BLACK,
+                playerBlack: userId, playerWhite: null,
+                playerBlackNick: userNick, playerWhiteNick: null,
+                gameOver: false, abortedBy: null
             };
             try {
                 await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'matches', matchId), initialData);
@@ -706,10 +765,10 @@
                     const data = matchSnap.data();
                     if (data.playerWhite && data.playerWhite !== userId && data.playerBlack !== userId) return showToast("SEKTORN ÄR FULL");
                     onlinePlayerColor = (data.playerBlack === userId) ? BLACK : WHITE;
-                    
+
                     if (onlinePlayerColor === WHITE) await updateDoc(matchRef, { playerWhite: userId, playerWhiteNick: userNick });
                     else await updateDoc(matchRef, { playerBlackNick: userNick });
-                    
+
                     currentMatchId = matchId;
                     startOnlineGame(matchId);
                 } else {
@@ -768,12 +827,12 @@
             if (gameOver || abortedBy) { gameOver = true; endGame(); }
         }
         function getInitialBoard() { let b = Array(8).fill(null).map(() => Array(8).fill(EMPTY)); b[3][3] = WHITE; b[3][4] = BLACK; b[4][3] = BLACK; b[4][4] = WHITE; return b; }
-        function initBoard() { 
-            board = getInitialBoard(); currentPlayer = BLACK; gameOver = false; abortedBy = null; 
+        function initBoard() {
+            board = getInitialBoard(); currentPlayer = BLACK; gameOver = false; abortedBy = null;
             const btnBack = getSafeEl('back-to-menu-btn'); if (btnBack) btnBack.classList.add('hidden');
             const p1L = getSafeEl('p1-label'), p2L = getSafeEl('p2-label');
             if (p1L) p1L.innerText = 'SVART'; if (p2L) p2L.innerText = 'VIT';
-            updateStats(); updateTurnIndicator(); updateBoardDOM(); 
+            updateStats(); updateTurnIndicator(); updateBoardDOM();
         }
 
         function updateTurnIndicator() {
@@ -784,15 +843,15 @@
             if (indicator) {
                 if (gameMode === 'online') {
                     if (!isOnlineMatchFull) {
-                        indicator.innerText = "SÖKER MOTSTÅNDARE";
+                        indicator.innerText = t("SÖKER MOTSTÅNDARE");
                         indicator.className = "px-5 py-2.5 whitespace-nowrap rounded-full bg-yellow-600 font-black text-xs tracking-widest uppercase animate-pulse shadow-lg";
                     } else {
                         const isMyTurn = currentPlayer === onlinePlayerColor;
-                        indicator.innerText = isMyTurn ? "DIN TUR" : "VÄNTAR";
+                        indicator.innerText = isMyTurn ? t("DIN TUR") : t("VÄNTAR");
                         indicator.className = isMyTurn ? "px-6 py-2.5 whitespace-nowrap rounded-full bg-emerald-600 font-black text-xs tracking-widest uppercase animate-pulse shadow-lg" : "px-6 py-2.5 whitespace-nowrap rounded-full bg-gray-800 font-black text-xs tracking-widest uppercase opacity-50";
                     }
                 } else {
-                    indicator.innerText = currentPlayer === BLACK ? "SVART TUR" : (isCpuThinking ? "XENO TÄNKER" : "VIT TUR");
+                    indicator.innerText = currentPlayer === BLACK ? t("SVART TUR") : (isCpuThinking ? t("XENO TÄNKER") : t("VIT TUR"));
                     indicator.className = `px-5 py-2.5 whitespace-nowrap rounded-full ${currentPlayer === BLACK ? 'bg-emerald-600' : 'bg-blue-600'} font-black text-xs tracking-widest uppercase animate-pulse shadow-xl`;
                 }
             }
@@ -900,28 +959,28 @@
         function endGame() {
             gameOver = true;
             const bl = getSafeEl('black-score'), wh = getSafeEl('white-score'), status = getSafeEl('final-status'), msg = getSafeEl('final-message'), box = getSafeEl('message-box');
-            
+
             if (abortedBy) {
-                if (status) status.innerText = "AVBRUTEN";
-                if (msg) msg.innerText = abortedBy === userId ? "Du övergav din post!" : "Din motståndare har övergett spelet";
+                if (status) status.innerText = t("AVBRUTEN");
+                if (msg) msg.innerText = abortedBy === userId ? t("Du övergav din post!") : t("Din motståndare har övergett spelet");
             } else {
                 const b = bl ? parseInt(bl.innerText) : 0, w = wh ? parseInt(wh.innerText) : 0;
                 if (gameMode === 'online') {
-                    if (status) status.innerText = b > w ? `${playerBlackNick} VANN` : (w > b ? `${playerWhiteNick} VANN` : "REMI");
-                    if (msg) msg.innerText = b > w ? "Mörkrets kraft dominerar." : (w > b ? "Ljuset segrade galaxen." : "Ingen vann stjärnornas krig.");
+                    if (status) status.innerText = b > w ? `${playerBlackNick} VANN` : (w > b ? `${playerWhiteNick} VANN` : t("REMI"));
+                    if (msg) msg.innerText = b > w ? t("Mörkrets kraft dominerar.") : (w > b ? t("Ljuset segrade galaxen.") : t("Ingen vann stjärnornas krig."));
                 } else {
-                    if (status) status.innerText = b > w ? "JORDEN SEGRADE" : (w > b ? "XENO SEGRADE" : "REMI");
-                    if (msg) msg.innerText = b > w ? "Mörkret har skingrats. Galaxen är säker." : (w > b ? "Xeno-imperiet vann. Packa dina väskor." : "Ett dött lopp i rymden.");
+                    if (status) status.innerText = b > w ? t("JORDEN SEGRADE") : (w > b ? t("XENO SEGRADE") : t("REMI"));
+                    if (msg) msg.innerText = b > w ? t("Mörkret har skingrats. Galaxen är säker.") : (w > b ? t("Xeno-imperiet vann. Packa dina väskor.") : t("Ett dött lopp i rymden."));
                 }
             }
             if (box) box.classList.remove('hidden');
         }
 
-        function closeModal() { 
+        function closeModal() {
             if (gameMode === 'online' && currentMatchId && gameOver) {
                 localStorage.setItem('hide_match_' + currentMatchId, 'true');
             }
-            showMenu(); 
+            showMenu();
         }
 
         function copyMatchId() {
@@ -939,6 +998,7 @@
         window.onload = () => {
             initAuth();
             initStation3D();
+            applyLang();
         };
     </script>
 </body>
