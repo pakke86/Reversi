@@ -12,7 +12,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, onSnapshot, updateDoc, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, getDoc, onSnapshot, updateDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // Byt ut värdena nedan mot dina faktiska uppgifter från Firebase Console (Project Settings)
         const firebaseConfig = {
@@ -29,7 +29,7 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        window.fb = { db, auth, appId, doc, setDoc, getDoc, onSnapshot, updateDoc, collection, signInAnonymously, signInWithCustomToken };
+        window.fb = { db, auth, appId, doc, setDoc, getDoc, onSnapshot, updateDoc, collection, query, where, getDocs, signInAnonymously, signInWithCustomToken };
     </script>
     <style>
         body {
@@ -262,17 +262,30 @@
                 <button onclick="showOnlineMenu()"
                     class="w-full bg-purple-600 hover:bg-purple-500 py-4 rounded-[2rem] font-black tracking-widest uppercase transition-all shadow-2xl hover:scale-105 active:scale-95 text-xs">Galaktisk
                     Online</button>
-                <button id="reconnect-btn" onclick="reconnectLastMatch()"
-                    class="hidden w-full border-2 border-emerald-500/50 hover:bg-emerald-500/20 py-4 rounded-[2rem] font-black tracking-widest uppercase transition-all shadow-2xl hover:scale-105 active:scale-95 text-xs text-emerald-400">Återanslut
-                    Match</button>
+                <button id="reconnect-btn" onclick="showActiveMatchesMenu()"
+                    class="w-full border-2 border-yellow-500/50 hover:bg-yellow-500/20 py-4 rounded-[2rem] font-black tracking-widest uppercase transition-all shadow-2xl hover:scale-105 active:scale-95 text-xs text-yellow-400">PÅGÅENDE SPEL</button>
             </div>
-            <div class="pt-8 border-t border-white/10">
-                <p class="text-[10px] text-emerald-400/60 uppercase font-black tracking-[0.3em] mb-2">
-                    IDENTIFIKATIONS-DNA</p>
-                <div id="user-id-display"
-                    class="text-[9px] text-purple-300 font-mono break-all bg-black/60 p-3 rounded-xl border border-purple-500/30">
-                    LADDAR...</div>
+            <div class="pt-8 border-t border-white/10 space-y-4">
+                <div>
+                    <p class="text-[10px] text-emerald-400/60 uppercase font-black tracking-[0.3em] mb-2">IDENTITET (NICKNAME)</p>
+                    <input id="nickname-input" type="text" placeholder="Ditt namn..." onchange="localStorage.setItem('reversi_nickname', this.value.trim())" class="w-full text-xs text-center text-white bg-black/60 p-3 rounded-xl border border-emerald-500/30 focus:border-emerald-400 focus:outline-none transition-all font-black uppercase">
+                </div>
+                <div>
+                    <p class="text-[10px] text-emerald-400/60 uppercase font-black tracking-[0.3em] mb-2">IDENTIFIKATIONS-DNA</p>
+                    <div id="user-id-display" class="text-[9px] text-purple-300 font-mono break-all bg-black/60 p-2 rounded-xl border border-purple-500/30">LADDAR...</div>
+                </div>
             </div>
+        </div>
+    </div>
+
+    <!-- Aktiva Matcher Meny -->
+    <div id="active-matches-menu" class="hidden fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/80 backdrop-blur-md">
+        <div class="glass-panel p-10 rounded-[3rem] border-2 border-yellow-500/50 max-w-md w-full text-center space-y-8 flex flex-col max-h-[80vh]">
+            <h2 class="text-3xl font-black text-yellow-400 italic uppercase">Pågående Spel</h2>
+            <div id="matches-list" class="flex-1 overflow-y-auto space-y-3 p-2 custom-scrollbar">
+                <!-- Matches injected here -->
+            </div>
+            <button onclick="showMenu()" class="w-full text-gray-500 text-[10px] uppercase font-black tracking-widest hover:text-white transition-colors mt-4">TILLBAKA</button>
         </div>
     </div>
 
@@ -299,7 +312,8 @@
 
     <!-- Spelskärm -->
     <div id="game-container" class="max-w-md w-full text-center space-y-4 relative z-10 hidden">
-        <header class="space-y-2">
+        <header class="space-y-2 relative">
+            <button id="back-to-menu-btn" onclick="backToActiveMatches()" class="hidden absolute top-0 left-0 text-[10px] font-black text-gray-400 hover:text-white uppercase tracking-widest px-3 py-2 bg-white/5 rounded-xl transition-all">&larr; Meny</button>
             <h1 class="text-4xl font-black tracking-tighter animated-title italic">REVERSI</h1>
             <p id="mode-badge" class="text-[8px] text-blue-400 tracking-[0.4em] uppercase opacity-70"></p>
             <div id="online-info" class="hidden mt-4">
@@ -395,6 +409,9 @@
         let userId = null;
         let isOnlineMatchFull = false;
         let wasMyTurn = false;
+        let abortedBy = null;
+        let playerBlackNick = 'Svart';
+        let playerWhiteNick = 'Vit';
 
         const getEl = (id) => document.getElementById(id);
 
@@ -539,6 +556,8 @@
                 userId = auth.currentUser.uid;
                 const display = getEl('user-id-display');
                 if (display) display.innerText = userId;
+                const nickInput = getEl('nickname-input');
+                if (nickInput) nickInput.value = localStorage.getItem('reversi_nickname') || '';
             } catch (err) {
                 console.error("Firebase Auth Error:", err);
                 const display = getEl('user-id-display');
@@ -568,41 +587,91 @@
 
         function showMenu() {
             if (unsubscribeMatch) { unsubscribeMatch(); unsubscribeMatch = null; }
-            const s = getSafeEl('start-screen'), o = getSafeEl('online-menu'), g = getSafeEl('game-container'), m = getSafeEl('message-box'), c = getSafeEl('confirm-modal');
+            const s = getSafeEl('start-screen'), o = getSafeEl('online-menu'), am = getSafeEl('active-matches-menu'), g = getSafeEl('game-container'), m = getSafeEl('message-box'), c = getSafeEl('confirm-modal');
             if (stationGroup) stationGroup.visible = true;
-
-            const lastMatch = localStorage.getItem('reversi_match_id');
-            const btn = getSafeEl('reconnect-btn');
-            if (btn) {
-                if (lastMatch) { btn.classList.remove('hidden'); btn.innerText = `ÅTERANSLUT (${lastMatch})`; }
-                else { btn.classList.add('hidden'); }
-            }
-
-            if (s) s.classList.remove('hidden'); if (o) o.classList.add('hidden'); if (g) g.classList.add('hidden'); if (m) m.classList.add('hidden'); if (c) c.classList.add('hidden');
+            if (s) s.classList.remove('hidden'); if (o) o.classList.add('hidden'); if (am) am.classList.add('hidden'); if (g) g.classList.add('hidden'); if (m) m.classList.add('hidden'); if (c) c.classList.add('hidden');
         }
 
-        function reconnectLastMatch() {
-            const matchId = localStorage.getItem('reversi_match_id');
-            if (matchId) {
-                const input = getSafeEl('join-id-input');
-                if (input) input.value = matchId;
-                joinOnlineMatch();
-            }
+        async function showActiveMatchesMenu() {
+            const s = getSafeEl('start-screen'), am = getSafeEl('active-matches-menu'), g = getSafeEl('game-container');
+            if (s) s.classList.add('hidden'); if (g) g.classList.add('hidden'); if (am) am.classList.remove('hidden');
+            
+            const listEl = getSafeEl('matches-list');
+            if (!listEl) return;
+            listEl.innerHTML = '<div class="text-white/50 text-sm italic py-4">Söker genom galaxen...</div>';
+            
+            if (!window.fb || !window.fb.db || !userId) return;
+
+            try {
+                const { db, appId, collection, query, where, getDocs } = window.fb;
+                const matchesRef = collection(db, 'artifacts', appId, 'public', 'data', 'matches');
+                const [snap1, snap2] = await Promise.all([ getDocs(query(matchesRef, where('playerBlack', '==', userId))), getDocs(query(matchesRef, where('playerWhite', '==', userId))) ]);
+                
+                let matches = [];
+                snap1.forEach(doc => matches.push({ id: doc.id, ...doc.data() }));
+                snap2.forEach(doc => { if (!matches.find(m => m.id === doc.id)) matches.push({ id: doc.id, ...doc.data() }); });
+                
+                if (matches.length === 0) {
+                    listEl.innerHTML = '<div class="text-gray-400 text-sm font-black py-4">INGA PÅGÅENDE SPEL</div>';
+                    return;
+                }
+                
+                matches.sort((a, b) => (a.gameOver === b.gameOver ? 0 : a.gameOver ? 1 : -1));
+                listEl.innerHTML = matches.map(m => {
+                    const amIBlack = (m.playerBlack === userId);
+                    const opponentNick = amIBlack ? (m.playerWhiteNick || 'Väntar...') : (m.playerBlackNick || 'Okänd');
+                    const myTurn = !m.gameOver && ((m.currentPlayer === BLACK && amIBlack) || (m.currentPlayer === WHITE && !amIBlack));
+                    const statusText = m.abortedBy ? "AVBRUTEN" : (m.gameOver ? "AVSLUTAD" : (myTurn ? "DIN TUR" : "VÄNTAR"));
+                    const statusColor = m.abortedBy ? "text-red-400" : (m.gameOver ? "text-gray-500" : (myTurn ? "text-emerald-400" : "text-yellow-500"));
+                    return `<button onclick="resumeMatch('${m.id}')" class="w-full bg-black/40 border border-white/10 hover:border-yellow-500/50 p-4 rounded-2xl flex flex-col items-start transition-all hover:bg-white/5 active:scale-95 text-left mb-2">
+                            <div class="flex justify-between w-full items-center"><span class="font-black text-white text-sm uppercase">VS ${opponentNick}</span><span class="font-black border border-white/20 p-1 rounded-md ${statusColor} text-[10px] tracking-widest">${statusText}</span></div>
+                            <div class="text-[9px] text-gray-500 font-mono mt-1">ID: ${m.id}</div></button>`;
+                }).join('');
+            } catch(e) { console.error(e); listEl.innerHTML = '<div class="text-red-500 text-sm font-black py-4">NÄTVERKSFEL</div>'; }
+        }
+
+        function resumeMatch(matchId) {
+            const input = getSafeEl('join-id-input');
+            if (input) input.value = matchId;
+            const am = getSafeEl('active-matches-menu');
+            if (am) am.classList.add('hidden');
+            joinOnlineMatch();
+        }
+
+        function backToActiveMatches() {
+            if (unsubscribeMatch) { unsubscribeMatch(); unsubscribeMatch = null; }
+            if (stationGroup) stationGroup.visible = true;
+            showActiveMatchesMenu();
         }
 
         function requestQuit() { const c = getSafeEl('confirm-modal'); if (c) c.classList.remove('hidden'); }
         function cancelQuit() { const c = getSafeEl('confirm-modal'); if (c) c.classList.add('hidden'); }
-        function confirmQuit() { showMenu(); }
+        
+        async function confirmQuit() { 
+            const c = getSafeEl('confirm-modal'); if (c) c.classList.add('hidden');
+            if (gameMode === 'online' && currentMatchId && !gameOver) {
+                try {
+                    const { db, appId, doc, updateDoc } = window.fb;
+                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'matches', currentMatchId), { gameOver: true, abortedBy: userId });
+                } catch(e) { console.error(e); }
+            }
+            showMenu(); 
+        }
 
         async function createOnlineMatch() {
             if (!window.fb || !window.fb.db) return showToast("FIREBASE SAKNAS");
             const { db, appId, doc, setDoc } = window.fb;
             const matchId = Math.random().toString(36).substring(2, 8).toUpperCase();
             currentMatchId = matchId; onlinePlayerColor = BLACK;
-            const initialData = { board: serializeBoard(getInitialBoard()), currentPlayer: BLACK, playerBlack: userId, playerWhite: null, gameOver: false };
+            const userNick = getSafeEl('nickname-input')?.value.trim() || 'Anonym';
+            const initialData = { 
+                board: serializeBoard(getInitialBoard()), currentPlayer: BLACK, 
+                playerBlack: userId, playerWhite: null, 
+                playerBlackNick: userNick, playerWhiteNick: null, 
+                gameOver: false, abortedBy: null 
+            };
             try {
                 await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'matches', matchId), initialData);
-                localStorage.setItem('reversi_match_id', matchId);
                 startOnlineGame(matchId);
             } catch (err) { console.error("Skapa match fel:", err); showToast("SÄNDNING MISSLYCKADES"); }
         }
@@ -612,8 +681,8 @@
             const { db, appId, doc, getDoc, updateDoc } = window.fb;
             const input = getSafeEl('join-id-input');
             let matchId = input && input.value ? input.value.trim().toUpperCase() : '';
-            if (!matchId) matchId = localStorage.getItem('reversi_match_id') || '';
             if (!matchId) return showToast("SKRIV IN ID");
+            const userNick = getSafeEl('nickname-input')?.value.trim() || 'Anonym';
             try {
                 const matchRef = doc(db, 'artifacts', appId, 'public', 'data', 'matches', matchId);
                 const matchSnap = await getDoc(matchRef);
@@ -621,15 +690,14 @@
                     const data = matchSnap.data();
                     if (data.playerWhite && data.playerWhite !== userId && data.playerBlack !== userId) return showToast("SEKTORN ÄR FULL");
                     onlinePlayerColor = (data.playerBlack === userId) ? BLACK : WHITE;
-                    if (onlinePlayerColor === WHITE) await updateDoc(matchRef, { playerWhite: userId });
+                    
+                    if (onlinePlayerColor === WHITE) await updateDoc(matchRef, { playerWhite: userId, playerWhiteNick: userNick });
+                    else await updateDoc(matchRef, { playerBlackNick: userNick });
+                    
                     currentMatchId = matchId;
-                    localStorage.setItem('reversi_match_id', matchId);
                     startOnlineGame(matchId);
                 } else {
                     showToast("ID SAKNAS");
-                    localStorage.removeItem('reversi_match_id');
-                    const btn = getSafeEl('reconnect-btn');
-                    if (btn) btn.classList.add('hidden');
                 }
             } catch (err) { console.error("Anslut match fel:", err); showToast("ANSLUTNINGSFEL"); }
         }
@@ -641,8 +709,11 @@
             }
             setupBoardDOM();
             const o = getSafeEl('online-menu'), g = getSafeEl('game-container'), oi = getSafeEl('online-info'), cm = getSafeEl('current-match-id');
+            const btnBack = getSafeEl('back-to-menu-btn');
             if (stationGroup) stationGroup.visible = false;
+            abortedBy = null; wasMyTurn = false;
             if (o) o.classList.add('hidden'); if (g) g.classList.remove('hidden'); if (oi) oi.classList.remove('hidden'); if (cm) cm.innerText = matchId;
+            if (btnBack) btnBack.classList.remove('hidden');
             const { db, appId, doc, onSnapshot } = window.fb;
             unsubscribeMatch = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'matches', matchId), (snap) => { if (snap.exists()) syncFromOnline(snap.data()); }, (err) => showToast("SIGNALSTÖRNING"));
         }
@@ -652,9 +723,23 @@
             board = deserializeBoard(data.board);
             currentPlayer = data.currentPlayer;
             gameOver = data.gameOver;
+            abortedBy = data.abortedBy || null;
+            playerBlackNick = data.playerBlackNick || 'Svart';
+            playerWhiteNick = data.playerWhiteNick || 'Vit';
+
+            const p1L = getSafeEl('p1-label'), p2L = getSafeEl('p2-label');
+            if (p1L) p1L.innerText = playerBlackNick.substring(0, 10);
+            if (p2L) p2L.innerText = playerWhiteNick.substring(0, 10);
+
+            if (abortedBy && abortedBy !== userId && !gameOver) {
+                if ("Notification" in window && Notification.permission === "granted") {
+                    new Notification("Galaktisk Reversi", { body: "Din motståndare fegade ur och gav upp!" });
+                }
+                showToast("MOTSTÅNDAREN GAV UPP!");
+            }
 
             const isMyTurn = (currentPlayer === onlinePlayerColor);
-            if (isMyTurn && !wasMyTurn && isOnlineMatchFull && !gameOver) {
+            if (isMyTurn && !wasMyTurn && isOnlineMatchFull && !gameOver && !abortedBy) {
                 if (document.hidden && "Notification" in window && Notification.permission === "granted") {
                     new Notification("Galaktisk Reversi", { body: "Det är din tur att göra ett drag!" });
                 }
@@ -664,10 +749,16 @@
             updateStats();
             updateTurnIndicator();
             updateBoardDOM();
-            if (gameOver) endGame();
+            if (gameOver || abortedBy) { gameOver = true; endGame(); }
         }
         function getInitialBoard() { let b = Array(8).fill(null).map(() => Array(8).fill(EMPTY)); b[3][3] = WHITE; b[3][4] = BLACK; b[4][3] = BLACK; b[4][4] = WHITE; return b; }
-        function initBoard() { board = getInitialBoard(); currentPlayer = BLACK; gameOver = false; updateStats(); updateTurnIndicator(); updateBoardDOM(); }
+        function initBoard() { 
+            board = getInitialBoard(); currentPlayer = BLACK; gameOver = false; abortedBy = null; 
+            const btnBack = getSafeEl('back-to-menu-btn'); if (btnBack) btnBack.classList.add('hidden');
+            const p1L = getSafeEl('p1-label'), p2L = getSafeEl('p2-label');
+            if (p1L) p1L.innerText = 'SVART'; if (p2L) p2L.innerText = 'VIT';
+            updateStats(); updateTurnIndicator(); updateBoardDOM(); 
+        }
 
         function updateTurnIndicator() {
             if (gameOver) return;
@@ -793,9 +884,20 @@
         function endGame() {
             gameOver = true;
             const bl = getSafeEl('black-score'), wh = getSafeEl('white-score'), status = getSafeEl('final-status'), msg = getSafeEl('final-message'), box = getSafeEl('message-box');
-            const b = bl ? parseInt(bl.innerText) : 0, w = wh ? parseInt(wh.innerText) : 0;
-            if (status) status.innerText = b > w ? "JORDEN SEGRADE" : (w > b ? "XENO SEGRADE" : "REMI");
-            if (msg) msg.innerText = b > w ? "Mörkret har skingrats. Galaxen är säker." : "Xeno-imperiet vann. Packa dina rymdväskor.";
+            
+            if (abortedBy) {
+                if (status) status.innerText = "AVBRUTEN";
+                if (msg) msg.innerText = abortedBy === userId ? "Du övergav din post!" : "Motståndaren flydde fältslaget!";
+            } else {
+                const b = bl ? parseInt(bl.innerText) : 0, w = wh ? parseInt(wh.innerText) : 0;
+                if (gameMode === 'online') {
+                    if (status) status.innerText = b > w ? `${playerBlackNick} VANN` : (w > b ? `${playerWhiteNick} VANN` : "REMI");
+                    if (msg) msg.innerText = b > w ? "Mörkrets kraft dominerar." : (w > b ? "Ljuset segrade galaxen." : "Ingen vann stjärnornas krig.");
+                } else {
+                    if (status) status.innerText = b > w ? "JORDEN SEGRADE" : (w > b ? "XENO SEGRADE" : "REMI");
+                    if (msg) msg.innerText = b > w ? "Mörkret har skingrats. Galaxen är säker." : (w > b ? "Xeno-imperiet vann. Packa dina väskor." : "Ett dött lopp i rymden.");
+                }
+            }
             if (box) box.classList.remove('hidden');
         }
 
@@ -816,9 +918,6 @@
         window.onload = () => {
             initAuth();
             initStation3D();
-            const lastMatch = localStorage.getItem('reversi_match_id');
-            const btn = getSafeEl('reconnect-btn');
-            if (lastMatch && btn) { btn.classList.remove('hidden'); btn.innerText = `ÅTERANSLUT (${lastMatch})`; }
         };
     </script>
 </body>
