@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Reversi - Galaktiskt Kaos Online</title>
-    
+
     <!-- PWA -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#10b981">
@@ -13,7 +13,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="icon" type="image/svg+xml" href="icon.svg">
     <link rel="apple-touch-icon" href="icon.svg">
-    
+
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Three.js for the slick 3D station and starfield -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -23,7 +23,7 @@
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, onSnapshot, updateDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Byt ut värdena nedan mot dina faktiska uppgifter från Firebase Console (Project Settings)
+
         const firebaseConfig = {
             apiKey: "AIzaSyC9o7005rgpJHo0_wI3vbM4Tun-g5mM1DU",
             authDomain: "reversi-space-multiplayer.firebaseapp.com",
@@ -259,7 +259,7 @@
     <!-- Startskärm -->
     <div id="start-screen" class="fixed inset-0 z-50 flex items-center justify-center p-6">
         <div
-            class="glass-panel p-10 rounded-[3rem] border-2 border-emerald-500/50 max-w-sm w-full text-center space-y-10 shadow-2xl z-10">
+            class="glass-panel relative p-10 rounded-[3rem] border-2 border-emerald-500/50 max-w-sm w-full text-center space-y-10 shadow-2xl z-10">
             <h1 class="text-7xl font-black italic tracking-tighter animated-title text-shadow-lg">REVERSI</h1>
             <div class="space-y-4">
                 <button onclick="startGame('solo')"
@@ -276,9 +276,14 @@
                     SPEL</button>
             </div>
             <div class="pt-8 border-t border-white/10 flex justify-center gap-4">
-                <button id="toggle-stars-btn" onclick="toggleStars()" class="w-full text-[10px] text-emerald-400/60 hover:text-emerald-400 uppercase font-black tracking-[0.2em] bg-black/40 px-4 py-4 rounded-xl transition-all border border-emerald-500/30">STANNA STJÄRNOR</button>
-                <button onclick="toggleLang()" class="w-full text-[10px] text-emerald-400/60 hover:text-emerald-400 uppercase font-black tracking-[0.2em] bg-black/40 px-4 py-4 rounded-xl transition-all border border-emerald-500/30">SV / EN</button>
+                <button id="toggle-stars-btn" onclick="toggleStars()"
+                    class="w-full text-[10px] text-emerald-400/60 hover:text-emerald-400 uppercase font-black tracking-[0.2em] bg-black/40 px-4 py-4 rounded-xl transition-all border border-emerald-500/30">STANNA
+                    STJÄRNOR</button>
+                <button onclick="toggleLang()"
+                    class="w-full text-[10px] text-emerald-400/60 hover:text-emerald-400 uppercase font-black tracking-[0.2em] bg-black/40 px-4 py-4 rounded-xl transition-all border border-emerald-500/30">SV
+                    / EN</button>
             </div>
+            <span class="absolute bottom-5 right-7 text-[10px] font-mono text-emerald-400/40 tracking-widest pointer-events-none">v1.1</span>
         </div>
     </div>
 
@@ -436,27 +441,87 @@
             applyLang();
         }
 
+        // ==========================================
+        // 🌍 SPRÅK OCH ÖVERSÄTTNINGAR (TRANSLATIONS)
+        // Här kan du superenkelt lägga till eller ändra översättningar.
+        // Vänstra sidan är "huvudnyckeln" (den svenska texten som står i HTML-koden), 
+        // och högra sidan är den engelska översättningen.
+        // Lägg alltid till ett kommatecken (,) efter varje rad!
+        // ==========================================
         const sv_en = {
-            'Singelspelare vs CPU': 'Singleplayer vs CPU', 'Lokal Duo': 'Local Duo', 'Galaktisk Online': 'Galactic Online',
-            'PÅGÅENDE SPEL': 'ACTIVE GAMES', 'Pågående Spel': 'Active Matches', 'DITT NICKNAME': 'YOUR NICKNAME',
-            'Terminal': 'Terminal', 'Skapa Sändning': 'Create Broadcast', 'SKRIV IN MATCH-ID': 'ENTER MATCH-ID', 'Anslut till ID': 'Join by ID',
-            'TILLBAKA': 'BACK', '← Meny': '← Menu', 'SÄNDNINGS-FREKVENS': 'BROADCAST FREQ', 'Svart': 'Black', 'Vit': 'White',
-            'Abort Mission': 'Abort Mission', 'Ge upp?': 'Give up?', 'Stanna och slåss': 'Stay and fight', 'Ja, jag flyr!': 'Yes, I flee!',
-            'Mission Over': 'Mission Over', 'Back to Command': 'Back to Command', 'SÖKER MOTSTÅNDARE': 'SEARCHING FOR OPPONENT',
-            'DIN TUR': 'YOUR TURN', 'VÄNTAR': 'WAITING', 'SVART TUR': 'BLACK TURN', 'XENO TÄNKER': 'XENO THINKING', 'VIT TUR': 'WHITE TURN',
-            'AVBRUTEN': 'ABORTED', 'REMI': 'DRAW', 'JORDEN SEGRADE': 'EARTH VICTORIOUS', 'XENO SEGRADE': 'XENO VICTORIOUS',
-            'Du övergav din post!': 'You abandoned your post!', 'Din motståndare har övergett spelet': 'Opponent fled the game',
-            'Mörkrets kraft dominerar.': 'Darkness dominates.', 'Ljuset segrade galaxen.': 'Light conquered the galaxy.',
-            'Ingen vann stjärnornas krig.': 'Nobody won the star wars.', 'Mörkret har skingrats. Galaxen är säker.': 'Galaxy relates safe now.',
-            'Xeno-imperiet vann. Packa dina väskor.': 'Xeno won. Pack your bags.', 'Ett dött lopp i rymden.': 'Dead heat in space.',
-            'Söker genom galaxen...': 'Scanning galaxy...', 'INGA PÅGÅENDE SPEL': 'NO ACTIVE GAMES', 'AVSLUTAD': 'FINISHED', 
+            // --- Huvudmeny & Knappar ---
+            'Singelspel': 'Singleplayer',
+            'Lokal Duo': 'Local Duo',
+            'Galaktisk Online': 'Galactic Online',
+            'SV / EN': 'SV / EN',
+            'STANNA STJÄRNOR': 'FREEZE STARS',
+            'TILLBAKA': 'BACK',
+            '← Meny': '← Menu',
+
+            // --- Online Lobbn ---
+            'PÅGÅENDE SPEL': 'ACTIVE GAMES',
+            'Pågående Spel': 'Active Matches',
+            'INGA PÅGÅENDE SPEL': 'NO ACTIVE GAMES',
+            'Söker genom galaxen...': 'Scanning galaxy...',
+            'Terminal': 'Terminal',
+            'DITT NICKNAME': 'YOUR NICKNAME',
+            'SKRIV IN MATCH-ID': 'ENTER MATCH-ID',
+            'Skapa Sändning': 'Create Broadcast',
+            'Anslut till ID': 'Join by ID',
+
+            // --- Spelets Gränssnitt ---
+            'SÄNDNINGS-FREKVENS': 'BROADC. FREQUENCY',
+            'Svart': 'Black',
+            'Vit': 'White',
+            'SVART TUR': 'BLACK TURN',
+            'VIT TUR': 'WHITE TURN',
+            'SÖKER MOTSTÅNDARE': 'SEARCHING FOR OPPONENT',
+            'DIN TUR': 'YOUR TURN',
+            'VÄNTAR': 'WAITING',
+            'XENO TÄNKER': 'XENO THINKING',
+
+            // --- Större fönster och Frågor ---
+            'Abort Mission': 'Abort Mission',
+            'Ge upp?': 'Give up?',
             'Flyr du fältet nu? Galaxen kommer aldrig att glömma detta ögonblick av feghet.': 'Fleeing the field now? The galaxy will never forget this cowardice.',
-            'SKRIV IN DITT NICKNAME!': 'ENTER YOUR NICKNAME!', 'FIREBASE SAKNAS': 'FIREBASE MISSING', 'SKRIV IN ID': 'ENTER MATCH-ID',
-            'SEKTORN ÄR FULL': 'SECTOR IS FULL', 'ID SAKNAS': 'ID NOT FOUND', 'ANSLUTNINGSFEL': 'CONNECTION ERROR', 'SÄNDNING MISSLYCKADES': 'BROADCAST FAILED',
-            'KOSMISK RADIOSKUGGA': 'COSMIC RADIO SHADOW', 'FREKVENS KOPIERAD': 'FREQUENCY COPIED', 'KUNDE INTE KOPIERA': 'COULD NOT COPY',
-            'VÄNTAR PÅ SPELARE 2...': 'WAITING FOR PLAYER 2...', 'MOTSTÅNDAREN GAV UPP!': 'OPPONENT GAVE UP!', 'SIGNALSTÖRNING': 'SIGNAL INTERFERENCE',
-            'SV / EN': 'SV / EN', 'STANNA STJÄRNOR': 'FREEZE STARS', 'Det är din tur att göra ett drag!': 'It is your turn to make a move!',
-            'Din motståndare fegade ur och gav upp!': 'Your opponent chickened out and gave up!'
+            'Stanna och slåss': 'Stay and fight',
+            'Ja, jag flyr!': 'Yes, I flee!',
+            'Mission Over': 'Mission Over',
+            'Back to Command': 'Back to Command',
+
+            // --- Final status & resultat ---
+            'AVBRUTEN': 'ABORTED',
+            'AVSLUTAD': 'FINISHED',
+            'REMI': 'DRAW',
+            'JORDEN SEGRADE': 'EARTH VICTORIOUS',
+            'XENO SEGRADE': 'XENO VICTORIOUS',
+            'Du övergav din post!': 'You abandoned your post!',
+            'Din motståndare har övergett spelet': 'Opponent fled the game',
+            'Mörkrets kraft dominerar.': 'Darkness dominates.',
+            'Ljuset segrade galaxen.': 'Light conquered the galaxy.',
+            'Ingen vann stjärnornas krig.': 'Nobody won the star wars.',
+            'Mörkret har skingrats. Galaxen är säker.': 'Galaxy relates safe now.',
+            'Xeno-imperiet vann. Packa dina väskor.': 'Xeno won. Pack your bags.',
+            'Ett dött lopp i rymden.': 'Dead heat in space.',
+
+            // --- Felmeddelanden (Toasts) varningar ---
+            'SKRIV IN DITT NICKNAME!': 'ENTER YOUR NICKNAME!',
+            'FIREBASE SAKNAS': 'FIREBASE MISSING',
+            'SKRIV IN ID': 'ENTER MATCH-ID',
+            'SEKTORN ÄR FULL': 'SECTOR IS FULL',
+            'ID SAKNAS': 'ID NOT FOUND',
+            'ANSLUTNINGSFEL': 'CONNECTION ERROR',
+            'SÄNDNING MISSLYCKADES': 'BROADCAST FAILED',
+            'KOSMISK RADIOSKUGGA': 'COSMIC RADIO SHADOW',
+            'FREKVENS KOPIERAD': 'FREQUENCY COPIED',
+            'KUNDE INTE KOPIERA': 'COULD NOT COPY',
+            'VÄNTAR PÅ SPELARE 2...': 'WAITING FOR PLAYER 2...',
+            'MOTSTÅNDAREN GAV UPP!': 'OPPONENT GAVE UP!',
+            'SIGNALSTÖRNING': 'SIGNAL INTERFERENCE',
+
+            // --- Mobil/Desktop Notifikationer ---
+            'Det är din tur att göra ett drag!': 'It is your turn to make a move!',
+            'Din motståndare fegade ur och gav upp!': 'Your opponent chickened out and gave up!',
         };
         const en_sv = {}; for (let k in sv_en) en_sv[sv_en[k]] = k;
 
@@ -541,7 +606,7 @@
             botHalf.position.y = -0.175;
             stationGroup.add(botHalf);
 
-            // --- STATION WINDOWS (Keeping windows, removing hulahoop and noses) ---
+
             const windowCount = 24;
             const windowGeom = new THREE.SphereGeometry(0.06, 8, 8);
             const windowMat = new THREE.MeshBasicMaterial({ color: 0x00f2ff }); // Cyan windows
@@ -553,7 +618,7 @@
                 stationGroup.add(win);
             }
 
-            // NOTE: Torus ring and Red Lanterns have been removed as per user request ("clownnäsor" and "cyan ring").
+
 
             updateStationPosition();
             scene.add(stationGroup);
