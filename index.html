@@ -257,10 +257,10 @@
     <div id="station-3d-container"></div>
 
     <!-- Startskärm -->
-    <div id="start-screen" class="fixed inset-0 z-50 flex items-center justify-center p-6">
+    <div id="start-screen" class="fixed inset-0 z-50 flex items-start md:items-center justify-center p-6 pt-[8vh] md:pt-6">
         <div
             class="glass-panel relative p-10 rounded-[3rem] border-2 border-emerald-500/50 max-w-sm w-full text-center space-y-10 shadow-2xl z-10">
-            <h1 class="text-7xl font-black italic tracking-tighter animated-title text-shadow-lg">REVERSI</h1>
+            <h1 class="text-5xl sm:text-6xl md:text-7xl font-black italic tracking-tighter animated-title text-shadow-lg">REVERSI</h1>
             <div class="space-y-4">
                 <button onclick="startGame('solo')"
                     class="w-full bg-emerald-600 hover:bg-emerald-500 py-4 rounded-[2rem] font-black tracking-widest uppercase transition-all shadow-2xl hover:scale-105 active:scale-95 text-xs">Singelspelare
@@ -329,12 +329,12 @@
     </div>
 
     <!-- Spelskärm -->
-    <div id="game-container" class="max-w-md w-full text-center space-y-4 relative z-10 hidden">
-        <header class="space-y-2 relative">
+    <div id="game-container" class="max-w-md w-full text-center space-y-2 md:space-y-4 relative z-10 hidden">
+        <header class="space-y-1 md:space-y-2 relative">
             <button id="back-to-menu-btn" onclick="backToActiveMatches()"
                 class="hidden absolute top-0 left-0 text-[10px] font-black text-gray-400 hover:text-white uppercase tracking-widest px-3 py-2 bg-white/5 rounded-xl transition-all">&larr;
                 Meny</button>
-            <h1 class="text-4xl font-black tracking-tighter animated-title italic">REVERSI</h1>
+            <h1 class="text-3xl md:text-4xl font-black tracking-tighter animated-title italic">REVERSI</h1>
             <p id="mode-badge" class="text-[8px] text-blue-400 tracking-[0.4em] uppercase opacity-70"></p>
             <div id="online-info" class="hidden mt-4">
                 <div class="flex flex-col items-center justify-center gap-2">
@@ -356,28 +356,28 @@
         </header>
 
         <div
-            class="glass-panel py-5 px-3 rounded-[3rem] shadow-2xl relative overflow-hidden flex justify-between items-center border border-white/10 w-full mb-2">
+            class="glass-panel py-3 px-2 md:py-5 md:px-3 rounded-[2rem] md:rounded-[3rem] shadow-2xl relative overflow-hidden flex justify-between items-center border border-white/10 w-full mb-2">
             <div id="p1-container" class="flex flex-col items-center flex-1 transition-all">
-                <div class="w-12 h-12 mb-2 rounded-full piece-black border-2 border-gray-900 shadow-xl"></div>
-                <span id="black-score" class="text-4xl font-black leading-none">2</span>
+                <div class="w-8 h-8 md:w-12 md:h-12 mb-1 md:mb-2 rounded-full piece-black border-2 border-gray-900 shadow-xl"></div>
+                <span id="black-score" class="text-3xl md:text-4xl font-black leading-none">2</span>
                 <span id="p1-label"
-                    class="text-[10px] uppercase font-black text-white/40 tracking-[0.3em] mt-2">Svart</span>
+                    class="text-[8px] md:text-[10px] uppercase font-black text-white/40 tracking-[0.3em] mt-1 md:mt-2">Svart</span>
             </div>
 
-            <div class="flex flex-col items-center flex-[1.5] space-y-4 px-2">
+            <div class="flex flex-col items-center flex-[1.5] space-y-2 md:space-y-4 px-1 md:px-2">
                 <div id="turn-indicator"
-                    class="px-5 py-2.5 rounded-full bg-emerald-600/90 font-black text-xs tracking-[0.2em] uppercase shadow-lg animate-pulse whitespace-nowrap">
+                    class="px-3 py-1.5 md:px-5 md:py-2.5 rounded-full bg-emerald-600/90 font-black text-[9px] md:text-xs tracking-[0.1em] md:tracking-[0.2em] uppercase shadow-lg animate-pulse whitespace-nowrap">
                     VÄNTAR</div>
                 <button onclick="requestQuit()"
-                    class="text-[10px] font-black uppercase text-red-500/80 hover:text-red-400 tracking-[0.2em] border border-red-900/40 px-4 py-2 rounded-full transition-all hover:bg-red-900/20">Abort
+                    class="text-[8px] md:text-[10px] font-black uppercase text-red-500/80 hover:text-red-400 tracking-[0.1em] md:tracking-[0.2em] border border-red-900/40 px-3 py-1.5 md:px-4 md:py-2 rounded-full transition-all hover:bg-red-900/20">Abort
                     Mission</button>
             </div>
 
             <div id="p2-container" class="flex flex-col items-center flex-1 transition-all">
-                <div class="w-12 h-12 mb-2 rounded-full piece-white border-2 border-gray-200 shadow-xl"></div>
-                <span id="white-score" class="text-4xl font-black leading-none">2</span>
+                <div class="w-8 h-8 md:w-12 md:h-12 mb-1 md:mb-2 rounded-full piece-white border-2 border-gray-200 shadow-xl"></div>
+                <span id="white-score" class="text-3xl md:text-4xl font-black leading-none">2</span>
                 <span id="p2-label"
-                    class="text-[10px] uppercase font-black text-white/40 tracking-[0.3em] mt-2">Vit</span>
+                    class="text-[8px] md:text-[10px] uppercase font-black text-white/40 tracking-[0.3em] mt-1 md:mt-2">Vit</span>
             </div>
         </div>
 
@@ -635,9 +635,15 @@
 
         function updateStationPosition() {
             if (!stationGroup) return;
+            const w = window.innerWidth;
             const aspect = window.innerWidth / window.innerHeight;
-            // Shift to right/bottom nicely
-            stationGroup.position.set(aspect * 3.5, -3.5, 0);
+            if (w < 768) {
+                // Mobile: Menu is top-aligned, so place 3D station centered in bottom half
+                stationGroup.position.set(0, -3.0, 0);
+            } else {
+                // Desktop: Shift to right/bottom nicely
+                stationGroup.position.set(aspect * 3.5, -3.5, 0);
+            }
         }
 
         function animateStation() {
