@@ -265,15 +265,9 @@
                 <button id="reconnect-btn" onclick="showActiveMatchesMenu()"
                     class="w-full border-2 border-yellow-500/50 hover:bg-yellow-500/20 py-4 rounded-[2rem] font-black tracking-widest uppercase transition-all shadow-2xl hover:scale-105 active:scale-95 text-xs text-yellow-400">PÅGÅENDE SPEL</button>
             </div>
-            <div class="pt-8 border-t border-white/10 space-y-4">
-                <div>
-                    <p class="text-[10px] text-emerald-400/60 uppercase font-black tracking-[0.3em] mb-2">IDENTITET (NICKNAME)</p>
-                    <input id="nickname-input" type="text" placeholder="Ditt namn..." onchange="localStorage.setItem('reversi_nickname', this.value.trim())" class="w-full text-xs text-center text-white bg-black/60 p-3 rounded-xl border border-emerald-500/30 focus:border-emerald-400 focus:outline-none transition-all font-black uppercase">
-                </div>
-                <div>
-                    <p class="text-[10px] text-emerald-400/60 uppercase font-black tracking-[0.3em] mb-2">IDENTIFIKATIONS-DNA</p>
-                    <div id="user-id-display" class="text-[9px] text-purple-300 font-mono break-all bg-black/60 p-2 rounded-xl border border-purple-500/30">LADDAR...</div>
-                </div>
+            <div class="pt-8 border-t border-white/10">
+                <p class="text-[10px] text-emerald-400/60 uppercase font-black tracking-[0.3em] mb-2">IDENTIFIKATIONS-DNA</p>
+                <div id="user-id-display" class="text-[9px] text-purple-300 font-mono break-all bg-black/60 p-3 rounded-xl border border-purple-500/30">LADDAR...</div>
             </div>
         </div>
     </div>
@@ -296,11 +290,15 @@
             class="glass-panel p-10 rounded-[3rem] border-2 border-purple-500/50 max-w-sm w-full text-center space-y-8">
             <h2 class="text-3xl font-black text-purple-400 italic uppercase">Terminal</h2>
             <div class="space-y-4">
+                <div>
+                    <input id="nickname-input" type="text" placeholder="DITT NICKNAME SKYLDIG STYRE" onchange="localStorage.setItem('reversi_nickname', this.value.trim())" class="w-full text-xs text-center text-white bg-black/60 p-4 rounded-[2rem] border-2 border-purple-500/30 focus:border-purple-400 focus:outline-none transition-all font-black uppercase mb-4 shadow-xl">
+                </div>
                 <button onclick="createOnlineMatch()"
                     class="w-full bg-purple-600 py-5 rounded-[2rem] font-black uppercase text-xs tracking-[0.2em] shadow-lg">Skapa
                     Sändning</button>
-                <input id="join-id-input" type="text" placeholder="MATCH-ID"
-                    class="w-full bg-black/70 border-2 border-purple-500/30 p-4 rounded-[2rem] text-center text-white placeholder-gray-700 font-mono uppercase focus:border-purple-400 focus:outline-none transition-all">
+                <div class="w-full h-px bg-white/20 my-4"></div>
+                <input id="join-id-input" type="text" placeholder="SKRIV IN MATCH-ID"
+                    class="w-full bg-black/70 border-2 border-purple-500/30 p-4 rounded-[2rem] text-center text-white placeholder-gray-700 font-mono uppercase focus:border-purple-400 focus:outline-none transition-all mb-4">
                 <button onclick="joinOnlineMatch()"
                     class="w-full border-2 border-purple-500/50 py-4 rounded-[2rem] font-black uppercase text-xs tracking-[0.2em] hover:bg-purple-500/20 transition-all">Anslut
                     till ID</button>
@@ -661,10 +659,18 @@
 
         async function createOnlineMatch() {
             if (!window.fb || !window.fb.db) return showToast("FIREBASE SAKNAS");
+            const nickEl = getSafeEl('nickname-input');
+            const userNick = nickEl?.value.trim() || localStorage.getItem('reversi_nickname');
+            if (!userNick) {
+                showOnlineMenu();
+                setTimeout(() => showToast("SKRIV IN DITT NICKNAME!"), 100);
+                return;
+            }
+            if (nickEl) localStorage.setItem('reversi_nickname', userNick);
+            
             const { db, appId, doc, setDoc } = window.fb;
             const matchId = Math.random().toString(36).substring(2, 8).toUpperCase();
             currentMatchId = matchId; onlinePlayerColor = BLACK;
-            const userNick = getSafeEl('nickname-input')?.value.trim() || 'Anonym';
             const initialData = { 
                 board: serializeBoard(getInitialBoard()), currentPlayer: BLACK, 
                 playerBlack: userId, playerWhite: null, 
@@ -679,11 +685,20 @@
 
         async function joinOnlineMatch() {
             if (!window.fb || !window.fb.db) return showToast("FIREBASE SAKNAS");
-            const { db, appId, doc, getDoc, updateDoc } = window.fb;
             const input = getSafeEl('join-id-input');
             let matchId = input && input.value ? input.value.trim().toUpperCase() : '';
             if (!matchId) return showToast("SKRIV IN ID");
-            const userNick = getSafeEl('nickname-input')?.value.trim() || 'Anonym';
+
+            const nickEl = getSafeEl('nickname-input');
+            const userNick = nickEl?.value.trim() || localStorage.getItem('reversi_nickname');
+            if (!userNick) {
+                showOnlineMenu();
+                setTimeout(() => showToast("SKRIV IN DITT NICKNAME!"), 100);
+                return;
+            }
+            if (nickEl) localStorage.setItem('reversi_nickname', userNick);
+
+            const { db, appId, doc, getDoc, updateDoc } = window.fb;
             try {
                 const matchRef = doc(db, 'artifacts', appId, 'public', 'data', 'matches', matchId);
                 const matchSnap = await getDoc(matchRef);
