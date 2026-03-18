@@ -147,7 +147,7 @@
         <div class="glass-panel p-10 rounded-[3rem] border-2 border-purple-500/50 max-w-sm w-full text-center space-y-8">
             <h2 class="text-3xl font-black text-purple-400 italic uppercase">Terminal</h2>
             <div class="space-y-4">
-                <button onclick="createOnlineMatch()" class="w-full bg-purple-600 py-5 rounded-[2rem] font-black uppercase text-xs tracking-[0.2em] shadow-lg">Skapa en spelmatch</button>
+                <button onclick="createOnlineMatch()" class="w-full bg-purple-600 py-5 rounded-[2rem] font-black uppercase text-xs tracking-[0.2em] shadow-lg">Skapa Sändning</button>
                 <input id="join-id-input" type="text" placeholder="MATCH-ID" class="w-full bg-black/70 border-2 border-purple-500/30 p-4 rounded-[2rem] text-center text-white placeholder-gray-700 font-mono uppercase focus:border-purple-400 focus:outline-none transition-all">
                 <button onclick="joinOnlineMatch()" class="w-full border-2 border-purple-500/50 py-4 rounded-[2rem] font-black uppercase text-xs tracking-[0.2em] hover:bg-purple-500/20 transition-all">Anslut till ID</button>
                 <button onclick="showMenu()" class="w-full text-gray-500 text-[10px] uppercase font-black tracking-widest pt-4 hover:text-white transition-colors">TILLBAKA</button>
@@ -409,7 +409,6 @@
             const matchId = Math.random().toString(36).substring(2, 8).toUpperCase();
             currentMatchId = matchId; onlinePlayerColor = BLACK;
             const initialData = { board: serializeBoard(getInitialBoard()), currentPlayer: BLACK, playerBlack: userId, playerWhite: null, gameOver: false };
-            try { await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'matches', matchId), initialData); startOnlineGame(matchId); } catch (err) { showToast("SÄNDNING MISSLYCKADES"); }
         try { 
             await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'matches', matchId), initialData); 
             startOnlineGame(matchId); 
@@ -431,7 +430,6 @@
                     if (onlinePlayerColor === WHITE) await updateDoc(matchRef, { playerWhite: userId });
                     currentMatchId = matchId; setupBoardDOM(); startOnlineGame(matchId);
                 } else { showToast("ID SAKNAS"); }
-            } catch (err) { showToast("ANSLUTNINGSFEL"); }
         } catch (err) { console.error("Anslut match fel:", err); showToast("ANSLUTNINGSFEL"); }
         }
 
