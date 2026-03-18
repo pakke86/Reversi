@@ -608,8 +608,8 @@
                 const [snap1, snap2] = await Promise.all([ getDocs(query(matchesRef, where('playerBlack', '==', userId))), getDocs(query(matchesRef, where('playerWhite', '==', userId))) ]);
                 
                 let matches = [];
-                snap1.forEach(doc => matches.push({ id: doc.id, ...doc.data() }));
-                snap2.forEach(doc => { if (!matches.find(m => m.id === doc.id)) matches.push({ id: doc.id, ...doc.data() }); });
+                snap1.forEach(doc => { if (localStorage.getItem('hide_match_' + doc.id) !== 'true') matches.push({ id: doc.id, ...doc.data() }); });
+                snap2.forEach(doc => { if (localStorage.getItem('hide_match_' + doc.id) !== 'true' && !matches.find(m => m.id === doc.id)) matches.push({ id: doc.id, ...doc.data() }); });
                 
                 if (matches.length === 0) {
                     listEl.innerHTML = '<div class="text-gray-400 text-sm font-black py-4">INGA PÅGÅENDE SPEL</div>';
@@ -654,6 +654,7 @@
                     const { db, appId, doc, updateDoc } = window.fb;
                     await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'matches', currentMatchId), { gameOver: true, abortedBy: userId });
                 } catch(e) { console.error(e); }
+                localStorage.setItem('hide_match_' + currentMatchId, 'true');
             }
             showMenu(); 
         }
@@ -887,7 +888,7 @@
             
             if (abortedBy) {
                 if (status) status.innerText = "AVBRUTEN";
-                if (msg) msg.innerText = abortedBy === userId ? "Du övergav din post!" : "Motståndaren flydde fältslaget!";
+                if (msg) msg.innerText = abortedBy === userId ? "Du övergav din post!" : "Din motståndare har övergett spelet";
             } else {
                 const b = bl ? parseInt(bl.innerText) : 0, w = wh ? parseInt(wh.innerText) : 0;
                 if (gameMode === 'online') {
@@ -901,7 +902,12 @@
             if (box) box.classList.remove('hidden');
         }
 
-        function closeModal() { showMenu(); }
+        function closeModal() { 
+            if (gameMode === 'online' && currentMatchId && gameOver) {
+                localStorage.setItem('hide_match_' + currentMatchId, 'true');
+            }
+            showMenu(); 
+        }
 
         function copyMatchId() {
             const id = getEl('current-match-id')?.innerText;
