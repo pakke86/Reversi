@@ -13,8 +13,16 @@
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, onSnapshot, updateDoc, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        const firebaseConfig = JSON.parse(__firebase_config);
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'reversi-space-multiplayer';
+        // Byt ut värdena nedan mot dina faktiska uppgifter från Firebase Console (Project Settings)
+        const firebaseConfig = {
+            apiKey: "AIzaSyC9o7005rgpJHo0_wI3vbM4Tun-g5mM1DU",
+            authDomain: "reversi-space-multiplayer.firebaseapp.com",
+            projectId: "reversi-space-multiplayer",
+            storageBucket: "reversi-space-multiplayer.firebasestorage.app",
+            messagingSenderId: "575305580897",
+            appId: "1:575305580897:web:0eb1e4ef1d4d4a6d494520"
+        };
+        const appId = 'reversi-space-multiplayer';
         
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
