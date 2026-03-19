@@ -362,7 +362,26 @@
             </div>
         </header>
 
-        <div
+        <!-- Duo Tävlande Scoreboard (Upp och ner) -->
+        <div id="duo-scoreboard"
+            class="hidden glass-panel py-3 px-2 md:py-5 md:px-3 rounded-[2rem] md:rounded-[3rem] shadow-2xl relative overflow-hidden flex justify-between items-center border border-white/10 w-full mb-2 rotate-180">
+            <div id="duo-p1-container" class="flex flex-col items-center flex-1 transition-all">
+                <div class="w-8 h-8 md:w-12 md:h-12 mb-1 md:mb-2 rounded-full piece-black border-2 border-gray-900 shadow-xl"></div>
+                <span id="duo-black-score" class="text-3xl md:text-4xl font-black leading-none">2</span>
+                <span id="duo-p1-label" class="text-[10px] md:text-xs uppercase font-black text-white tracking-[0.3em] mt-1 md:mt-2">Svart</span>
+            </div>
+            <div class="flex flex-col items-center flex-[1.5] space-y-2 md:space-y-4 px-1 md:px-2">
+                <div id="duo-turn-indicator" class="px-3 py-1.5 md:px-5 md:py-2.5 rounded-full bg-emerald-600/90 font-black text-[9px] md:text-xs tracking-[0.1em] md:tracking-[0.2em] uppercase shadow-lg animate-pulse whitespace-nowrap">VÄNTAR</div>
+                <button onclick="requestQuit()" class="text-[8px] md:text-[10px] font-black uppercase text-red-500/80 hover:text-red-400 tracking-[0.1em] md:tracking-[0.2em] border border-red-900/40 px-3 py-1.5 md:px-4 md:py-2 rounded-full transition-all hover:bg-red-900/20">Abort Mission</button>
+            </div>
+            <div id="duo-p2-container" class="flex flex-col items-center flex-1 transition-all">
+                <div class="w-8 h-8 md:w-12 md:h-12 mb-1 md:mb-2 rounded-full piece-white border-2 border-gray-200 shadow-xl"></div>
+                <span id="duo-white-score" class="text-3xl md:text-4xl font-black leading-none">2</span>
+                <span id="duo-p2-label" class="text-[10px] md:text-xs uppercase font-black text-white tracking-[0.3em] mt-1 md:mt-2">Vit</span>
+            </div>
+        </div>
+
+        <div id="main-scoreboard"
             class="glass-panel py-3 px-2 md:py-5 md:px-3 rounded-[2rem] md:rounded-[3rem] shadow-2xl relative overflow-hidden flex justify-between items-center border border-white/10 w-full mb-2">
             <div id="p1-container" class="flex flex-col items-center flex-1 transition-all">
                 <div
@@ -773,10 +792,18 @@
             gameMode = mode;
             setupBoardDOM();
             const s = getSafeEl('start-screen'), o = getSafeEl('online-menu'), g = getSafeEl('game-container'), oi = getSafeEl('online-info');
+            const ms = getSafeEl('main-scoreboard'), ds = getSafeEl('duo-scoreboard'), brd = getSafeEl('board');
             if (stationGroup) stationGroup.visible = false;
             if (s) s.classList.add('hidden');
             if (o) o.classList.add('hidden');
             if (oi) oi.classList.add('hidden');
+            if (mode === 'duo') {
+                if(ds) ds.classList.remove('hidden');
+                if(ms && brd) { brd.after(ms); ms.classList.remove('mb-2'); ms.classList.add('mt-2'); }
+            } else {
+                if(ds) ds.classList.add('hidden');
+                if(ms && brd) { brd.before(ms); ms.classList.remove('mt-2'); ms.classList.add('mb-2'); }
+            }
             if (g) g.classList.remove('hidden');
             initBoard();
         }
@@ -940,6 +967,9 @@
             abortedBy = null; wasMyTurn = false;
             if (o) o.classList.add('hidden'); if (g) g.classList.remove('hidden'); if (oi) oi.classList.remove('hidden'); if (cm) cm.innerText = matchId;
             if (btnBack) btnBack.classList.remove('hidden');
+            const ms = getSafeEl('main-scoreboard'), ds = getSafeEl('duo-scoreboard'), brd = getSafeEl('board');
+            if(ds) ds.classList.add('hidden');
+            if(ms && brd) { brd.before(ms); ms.classList.remove('mt-2'); ms.classList.add('mb-2'); }
             const { db, appId, doc, onSnapshot } = window.fb;
             unsubscribeMatch = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'matches', matchId), (snap) => { if (snap.exists()) syncFromOnline(snap.data()); }, (err) => showToast("SIGNALSTÖRNING"));
         }
@@ -990,30 +1020,37 @@
             board = getInitialBoard(); currentPlayer = BLACK; gameOver = false; abortedBy = null;
             const btnBack = getSafeEl('back-to-menu-btn'); if (btnBack) btnBack.classList.add('hidden');
             const p1L = getSafeEl('p1-label'), p2L = getSafeEl('p2-label');
+            const dp1L = getSafeEl('duo-p1-label'), dp2L = getSafeEl('duo-p2-label');
             if (p1L) p1L.innerText = 'SVART'; if (p2L) p2L.innerText = 'VIT';
+            if (dp1L) dp1L.innerText = 'SVART'; if (dp2L) dp2L.innerText = 'VIT';
             updateStats(); updateTurnIndicator(); updateBoardDOM();
         }
 
         function updateTurnIndicator() {
             if (gameOver) return;
             const p1c = getSafeEl('p1-container'), p2c = getSafeEl('p2-container'), indicator = getSafeEl('turn-indicator');
-            if (p1c) p1c.style.opacity = currentPlayer === BLACK ? "1" : "0.3";
-            if (p2c) p2c.style.opacity = currentPlayer === WHITE ? "1" : "0.3";
-            if (indicator) {
-                if (gameMode === 'online') {
-                    if (!isOnlineMatchFull) {
-                        indicator.innerText = t("SÖKER MOTSTÅNDARE");
-                        indicator.className = "px-5 py-2.5 whitespace-nowrap rounded-full bg-yellow-600 font-black text-xs tracking-widest uppercase animate-pulse shadow-lg";
-                    } else {
-                        const isMyTurn = currentPlayer === onlinePlayerColor;
-                        indicator.innerText = isMyTurn ? t("DIN TUR") : t("VÄNTAR");
-                        indicator.className = isMyTurn ? "px-6 py-2.5 whitespace-nowrap rounded-full bg-emerald-600 font-black text-xs tracking-widest uppercase animate-pulse shadow-lg" : "px-6 py-2.5 whitespace-nowrap rounded-full bg-gray-800 font-black text-xs tracking-widest uppercase opacity-50";
-                    }
+            const dp1c = getSafeEl('duo-p1-container'), dp2c = getSafeEl('duo-p2-container'), dIndicator = getSafeEl('duo-turn-indicator');
+            const o1 = currentPlayer === BLACK ? "1" : "0.3", o2 = currentPlayer === WHITE ? "1" : "0.3";
+            
+            if (p1c) p1c.style.opacity = o1; if (p2c) p2c.style.opacity = o2;
+            if (dp1c) dp1c.style.opacity = o1; if (dp2c) dp2c.style.opacity = o2;
+            
+            let txt = "", cls = "";
+            if (gameMode === 'online') {
+                if (!isOnlineMatchFull) {
+                    txt = t("SÖKER MOTSTÅNDARE");
+                    cls = "px-5 py-2.5 whitespace-nowrap rounded-full bg-yellow-600 font-black text-xs tracking-widest uppercase animate-pulse shadow-lg";
                 } else {
-                    indicator.innerText = currentPlayer === BLACK ? t("SVART TUR") : (isCpuThinking ? t("XENO TÄNKER") : t("VIT TUR"));
-                    indicator.className = `px-5 py-2.5 whitespace-nowrap rounded-full ${currentPlayer === BLACK ? 'bg-emerald-600' : 'bg-blue-600'} font-black text-xs tracking-widest uppercase animate-pulse shadow-xl`;
+                    const isMyTurn = currentPlayer === onlinePlayerColor;
+                    txt = isMyTurn ? t("DIN TUR") : t("VÄNTAR");
+                    cls = isMyTurn ? "px-6 py-2.5 whitespace-nowrap rounded-full bg-emerald-600 font-black text-xs tracking-widest uppercase animate-pulse shadow-lg" : "px-6 py-2.5 whitespace-nowrap rounded-full bg-gray-800 font-black text-xs tracking-widest uppercase opacity-50";
                 }
+            } else {
+                txt = currentPlayer === BLACK ? t("SVART TUR") : (isCpuThinking ? t("XENO TÄNKER") : t("VIT TUR"));
+                cls = `px-5 py-2.5 whitespace-nowrap rounded-full ${currentPlayer === BLACK ? 'bg-emerald-600' : 'bg-blue-600'} font-black text-xs tracking-widest uppercase animate-pulse shadow-xl`;
             }
+            if (indicator) { indicator.innerText = txt; indicator.className = cls; }
+            if (dIndicator) { dIndicator.innerText = txt; dIndicator.className = cls; }
         }
 
         function updateBoardDOM() {
@@ -1118,7 +1155,9 @@
         function updateStats() {
             let b = 0, w = 0; board.forEach(row => row.forEach(cell => { if (cell === BLACK) b++; if (cell === WHITE) w++; }));
             const bl = getSafeEl('black-score'), wh = getSafeEl('white-score');
+            const dbl = getSafeEl('duo-black-score'), dwh = getSafeEl('duo-white-score');
             if (bl) bl.innerText = b; if (wh) wh.innerText = w;
+            if (dbl) dbl.innerText = b; if (dwh) dwh.innerText = w;
         }
 
         function endGame() {
