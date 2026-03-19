@@ -123,6 +123,12 @@
             border: 1px solid rgba(255, 255, 255, 0.15);
         }
 
+        :root {
+            --brd-bg: 6, 78, 59;
+            --brd-glow: 16, 185, 129;
+            --brd-cell: 4, 120, 87;
+        }
+
         .board-grid {
             display: grid;
             grid-template-columns: repeat(8, 1fr);
@@ -130,22 +136,24 @@
             width: 100%;
             max-width: min(85vw, 400px);
             aspect-ratio: 1 / 1;
-            background-color: rgba(6, 78, 59, 0.85);
-            box-shadow: 0 0 60px rgba(16, 185, 129, 0.4), inset 0 0 30px rgba(0, 0, 0, 0.8);
+            background-color: rgba(var(--brd-bg), 0.85);
+            box-shadow: 0 0 60px rgba(var(--brd-glow), 0.4), inset 0 0 30px rgba(0, 0, 0, 0.8);
             touch-action: manipulation;
             border-radius: 16px;
-            border: 4px solid rgba(16, 185, 129, 0.6);
+            border: 4px solid rgba(var(--brd-glow), 0.6);
             padding: 4px;
+            transition: all 0.5s ease;
         }
 
         .cell {
-            border: 1px solid rgba(4, 120, 87, 0.4);
+            border: 1px solid rgba(var(--brd-cell), 0.4);
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
             position: relative;
             perspective: 1000px;
+            transition: border-color 0.5s ease;
         }
 
         .piece-container {
@@ -189,10 +197,11 @@
             content: '';
             width: 22%;
             height: 22%;
-            background-color: rgba(255, 255, 255, 0.6);
+            background-color: rgba(var(--brd-glow), 0.8);
             border-radius: 50%;
             animation: pulse-dot 1s infinite;
-            box-shadow: 0 0 8px white;
+            box-shadow: 0 0 8px rgba(var(--brd-glow), 1);
+            transition: all 0.5s ease;
         }
 
         @keyframes pulse-dot {
@@ -252,6 +261,21 @@
     </div>
 
     <div id="toast">SYSTEMFEL: Ingen signal!</div>
+
+    <!-- Theme Picker -->
+    <div class="fixed bottom-5 left-5 md:bottom-8 md:left-8 z-[60] flex items-center gap-3">
+        <button onclick="toggleTheme()" class="w-10 h-10 md:w-12 md:h-12 bg-black/60 border border-white/20 rounded-full flex items-center justify-center hover:bg-white/10 hover:border-white/50 transition-all shadow-xl backdrop-blur-md text-white group" title="Välj Färgtema">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 md:h-6 md:w-6 group-hover:rotate-12 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+            </svg>
+        </button>
+        <div id="theme-palette" class="flex items-center gap-2 bg-black/80 backdrop-blur-md px-3 py-2 rounded-[2rem] border border-white/10 shadow-2xl transition-all duration-300 opacity-0 -translate-x-4 pointer-events-none">
+            <button onclick="setTheme('emerald')" class="w-6 h-6 md:w-8 md:h-8 rounded-full bg-emerald-500 hover:scale-125 transition-transform border border-white/20 shadow-[0_0_10px_rgba(16,185,129,0.5)]"></button>
+            <button onclick="setTheme('purple')" class="w-6 h-6 md:w-8 md:h-8 rounded-full bg-purple-500 hover:scale-125 transition-transform border border-white/20 shadow-[0_0_10px_rgba(168,85,247,0.5)]"></button>
+            <button onclick="setTheme('blue')" class="w-6 h-6 md:w-8 md:h-8 rounded-full bg-cyan-500 hover:scale-125 transition-transform border border-white/20 shadow-[0_0_10px_rgba(6,182,212,0.5)]"></button>
+            <button onclick="setTheme('rose')" class="w-6 h-6 md:w-8 md:h-8 rounded-full bg-rose-500 hover:scale-125 transition-transform border border-white/20 shadow-[0_0_10px_rgba(225,29,72,0.5)]"></button>
+        </div>
+    </div>
 
     <!-- 3D STATION & STARFIELD CONTAINER -->
     <div id="station-3d-container"></div>
@@ -704,16 +728,35 @@
             if (starField && starsMoving) {
                 starField.rotation.y += 0.0002;
             }
-            renderer.render(scene, camera);
+        renderer.render(scene, camera);
         }
 
         window.addEventListener('resize', () => {
-            if (!camera || !renderer) return;
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            updateStationPosition();
+            if (camera && renderer) {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                updateStationPosition();
+            }
         });
+
+        function toggleTheme() {
+            const p = document.getElementById('theme-palette');
+            if (p) {
+                p.classList.toggle('opacity-0');
+                p.classList.toggle('-translate-x-4');
+                p.classList.toggle('pointer-events-none');
+            }
+        }
+
+        function setTheme(tStr) {
+            const root = document.documentElement;
+            if (tStr === 'emerald') { root.style.setProperty('--brd-bg', '6, 78, 59'); root.style.setProperty('--brd-glow', '16, 185, 129'); root.style.setProperty('--brd-cell', '4, 120, 87'); }
+            if (tStr === 'purple') { root.style.setProperty('--brd-bg', '59, 7, 100'); root.style.setProperty('--brd-glow', '168, 85, 247'); root.style.setProperty('--brd-cell', '107, 33, 168'); }
+            if (tStr === 'blue') { root.style.setProperty('--brd-bg', '8, 47, 73'); root.style.setProperty('--brd-glow', '6, 182, 212'); root.style.setProperty('--brd-cell', '14, 116, 144'); }
+            if (tStr === 'rose') { root.style.setProperty('--brd-bg', '76, 5, 25'); root.style.setProperty('--brd-glow', '225, 29, 72'); root.style.setProperty('--brd-cell', '159, 18, 57'); }
+            localStorage.setItem('reversi_theme', tStr);
+        }
 
         /* --- GAME LOGIC --- */
         function setupBoardDOM() {
@@ -1200,6 +1243,8 @@
         function deserializeBoard(s) { return JSON.parse(s); }
 
         window.onload = () => {
+            const savedTheme = localStorage.getItem('reversi_theme');
+            if(savedTheme) setTheme(savedTheme);
             if ('serviceWorker' in navigator) {
                 navigator.serviceWorker.register('sw.js').catch(e => console.error('PWA fail:', e));
             }
