@@ -837,7 +837,8 @@
             if (gameMode === 'online' && currentMatchId && !gameOver) {
                 try {
                     const { db, appId, doc, updateDoc } = window.fb;
-                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'matches', currentMatchId), { gameOver: true, abortedBy: userId });
+                    const quickExpire = new Date(Date.now() + (2 * 60 * 60 * 1000)); // Raderas 2 timmar efter avbrutet
+                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'matches', currentMatchId), { gameOver: true, abortedBy: userId, expireAt: quickExpire });
                 } catch (e) { console.error(e); }
                 localStorage.setItem('hide_match_' + currentMatchId, 'true');
             }
@@ -858,11 +859,12 @@
             const { db, appId, doc, setDoc } = window.fb;
             const matchId = Math.random().toString(36).substring(2, 8).toUpperCase();
             currentMatchId = matchId; onlinePlayerColor = BLACK;
+            const expireDate = new Date(Date.now() + (3 * 24 * 60 * 60 * 1000)); // Raderas efter 3 dagar om spelet aslutats
             const initialData = {
                 board: serializeBoard(getInitialBoard()), currentPlayer: BLACK,
                 playerBlack: userId, playerWhite: null,
                 playerBlackNick: userNick, playerWhiteNick: null,
-                gameOver: false, abortedBy: null
+                gameOver: false, abortedBy: null, expireAt: expireDate
             };
             try {
                 await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'matches', matchId), initialData);
@@ -1035,7 +1037,9 @@
                 let nextPlayer = (currentPlayer === BLACK) ? WHITE : BLACK;
                 let nextGameOver = false;
                 if (!hasAnyValidMove(nextPlayer, newBoard)) { if (!hasAnyValidMove(currentPlayer, newBoard)) nextGameOver = true; else nextPlayer = currentPlayer; }
-                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'matches', currentMatchId), { board: serializeBoard(newBoard), currentPlayer: nextPlayer, gameOver: nextGameOver });
+                let updateData = { board: serializeBoard(newBoard), currentPlayer: nextPlayer, gameOver: nextGameOver };
+                if (nextGameOver) updateData.expireAt = new Date(Date.now() + (2 * 60 * 60 * 1000)); // Raderas 2 timmar efter avslut
+                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'matches', currentMatchId), updateData);
             } else { applyMove(r, c, flips); }
         }
 
