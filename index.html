@@ -296,7 +296,7 @@
                 <!-- Matches injected here -->
             </div>
             <button onclick="showMenu()"
-                class="w-full text-gray-500 text-[10px] uppercase font-black tracking-widest hover:text-white transition-colors mt-4">TILLBAKA</button>
+                class="w-full text-gray-400 text-xs uppercase font-black tracking-[0.2em] hover:text-white transition-all mt-4 border border-gray-600/50 hover:border-gray-400 hover:bg-white/5 py-4 rounded-2xl shadow-lg">TILLBAKA</button>
         </div>
     </div>
 
@@ -322,7 +322,7 @@
                     class="w-full border-2 border-purple-500/50 py-4 rounded-[2rem] font-black uppercase text-xs tracking-[0.2em] hover:bg-purple-500/20 transition-all">Anslut
                     till ID</button>
                 <button onclick="showMenu()"
-                    class="w-full text-gray-500 text-[10px] uppercase font-black tracking-widest pt-4 hover:text-white transition-colors">TILLBAKA</button>
+                    class="w-full text-gray-400 text-xs uppercase font-black tracking-[0.2em] hover:text-white transition-all mt-2 border border-gray-600/50 hover:border-gray-400 hover:bg-white/5 py-4 rounded-2xl shadow-lg">TILLBAKA</button>
             </div>
         </div>
     </div>
@@ -599,7 +599,7 @@
             const topMat = new THREE.MeshStandardMaterial({ color: 0x111827, metalness: 0.8, roughness: 0.2 });
             const topHalf = new THREE.Mesh(topGeom, topMat);
             const blackEdges = new THREE.EdgesGeometry(topGeom, 30);
-            const blackLineMat = new THREE.LineBasicMaterial({ color: 0x10b981, transparent: true, opacity: 0.4 });
+            const blackLineMat = new THREE.LineBasicMaterial({ color: 0x4b5563, transparent: true, opacity: 0.5 });
             const blackOutline = new THREE.LineSegments(blackEdges, blackLineMat);
             topHalf.add(blackOutline);
             topHalf.position.y = 0.175;
@@ -867,6 +867,7 @@
             try {
                 await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'matches', matchId), initialData);
                 startOnlineGame(matchId);
+                copyMatchId();
             } catch (err) { console.error("Skapa match fel:", err); showToast("SÄNDNING MISSLYCKADES"); }
         }
 
