@@ -185,8 +185,8 @@ for (const [regex, replacement] of jsReplacements) {
 content = content.replace(/animateStation\(\);\s*\}/, "animateStation();\n            applyLang();\n        }");
 
 // Handle matches-list injection
-content = content.replace(/<div class="text-white\\/50 text-sm italic py-4">Söker genom galaxen\.\.\.<\\/div>/, "`<div class=\"text-white/50 text-sm italic py-4\">${t('SCANNING')}</div>`");
-content = content.replace(/<div class="text-gray-400 text-sm font-black py-4">INGA PÅGÅENDE SPEL<\\/div>/, "`<div class=\"text-gray-400 text-sm font-black py-4\">${t('NO_MATCHES')}</div>`");
+content = content.replace(/<div class="text-white\\/50 text - sm italic py - 4">Söker genom galaxen\.\.\.<\\/div>/, "`<div class=\"text-white/50 text-sm italic py-4\">${t('SCANNING')}</div>`");
+content = content.replace(/<div class="text-gray-400 text-sm font-black py-4">INGA PÅGÅENDE SPEL<\\/div > /, "`<div class=\"text-gray-400 text-sm font-black py-4\">${t('NO_MATCHES')}</div > `");
 
 // Ensure User ID display logic is removed from Auth module since we removed the HTML
 content = content.replace(/const display = getEl\('user-id-display'\);[\s\S]*?display\.innerText = [^;]+;/g, "");

@@ -1,6 +1,6 @@
 {
   "name": "Galaktisk Reversi",
-  "short_name": "Reversi",
+  "short_name": "Galaktisk Reversi",
   "description": "Spela Reversi i rymden",
   "start_url": "./index.html",
   "display": "fullscreen",

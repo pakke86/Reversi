@@ -540,6 +540,7 @@
             updateTurnIndicator();
             const mb = getEl('message-box');
             if (mb && !mb.classList.contains('hidden') && gameOver) endGame();
+            if (typeof updatePendingMovesCount === 'function') updatePendingMovesCount();
         }
 
         function applyLang() {
@@ -706,6 +707,7 @@
                     await signInAnonymously(auth);
                 }
                 userId = auth.currentUser.uid;
+                updatePendingMovesCount();
             } catch (err) {
                 console.error("Firebase Auth Error:", err);
                 showToast("KOSMISK RADIOSKUGGA");
@@ -714,13 +716,39 @@
 
         const getSafeEl = (id) => document.getElementById(id);
 
+        async function updatePendingMovesCount() {
+            if (!window.fb || !window.fb.db || !userId) return;
+            try {
+                const { db, appId, collection, query, where, getDocs } = window.fb;
+                const matchesRef = collection(db, 'artifacts', appId, 'public', 'data', 'matches');
+                const [snap1, snap2] = await Promise.all([getDocs(query(matchesRef, where('playerBlack', '==', userId))), getDocs(query(matchesRef, where('playerWhite', '==', userId)))]);
+                let count = 0;
+                const processDoc = (doc) => {
+                    const m = doc.data();
+                    if (!m.gameOver && !m.abortedBy && localStorage.getItem('hide_match_' + doc.id) !== 'true') {
+                        const amIBlack = (m.playerBlack === userId);
+                        const isOnlineMatchFull = !!(m.playerBlack && m.playerWhite);
+                        const myTurn = isOnlineMatchFull && ((m.currentPlayer === BLACK && amIBlack) || (m.currentPlayer === WHITE && !amIBlack));
+                        if(myTurn) count++;
+                    }
+                };
+                snap1.forEach(processDoc);
+                snap2.forEach(processDoc);
+                const btn = getSafeEl('reconnect-btn');
+                if (btn) {
+                    btn.innerHTML = t('PÅGÅENDE SPEL') + (count > 0 ? `<span class="bg-red-500 text-white rounded-full px-2 py-0.5 ml-2 text-[10px] animate-pulse">${count}</span>` : '');
+                }
+            } catch (e) { console.error("Pending count err:", e); }
+        }
+
         function startGame(mode) {
             gameMode = mode;
             setupBoardDOM();
-            const s = getSafeEl('start-screen'), o = getSafeEl('online-menu'), g = getSafeEl('game-container');
+            const s = getSafeEl('start-screen'), o = getSafeEl('online-menu'), g = getSafeEl('game-container'), oi = getSafeEl('online-info');
             if (stationGroup) stationGroup.visible = false;
             if (s) s.classList.add('hidden');
             if (o) o.classList.add('hidden');
+            if (oi) oi.classList.add('hidden');
             if (g) g.classList.remove('hidden');
             initBoard();
         }
@@ -737,6 +765,7 @@
             const s = getSafeEl('start-screen'), o = getSafeEl('online-menu'), am = getSafeEl('active-matches-menu'), g = getSafeEl('game-container'), m = getSafeEl('message-box'), c = getSafeEl('confirm-modal');
             if (stationGroup) stationGroup.visible = true;
             if (s) s.classList.remove('hidden'); if (o) o.classList.add('hidden'); if (am) am.classList.add('hidden'); if (g) g.classList.add('hidden'); if (m) m.classList.add('hidden'); if (c) c.classList.add('hidden');
+            updatePendingMovesCount();
         }
 
         async function showActiveMatchesMenu() {
@@ -886,6 +915,10 @@
 
         function syncFromOnline(data) {
             isOnlineMatchFull = !!(data.playerBlack && data.playerWhite);
+            if (isOnlineMatchFull) {
+                const oi = getSafeEl('online-info');
+                if (oi) oi.classList.add('hidden');
+            }
             board = deserializeBoard(data.board);
             currentPlayer = data.currentPlayer;
             gameOver = data.gameOver;
