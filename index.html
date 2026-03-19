@@ -335,7 +335,7 @@
                     class="hidden text-[10px] font-black text-white hover:text-emerald-400 uppercase tracking-widest px-4 py-2 bg-black/60 border border-white/20 rounded-xl transition-all shadow-xl backdrop-blur-md">&larr;
                     Meny</button>
             </div>
-            <h1 class="text-3xl md:text-4xl font-black tracking-tighter animated-title italic mt-6 md:mt-0 pt-2 md:pt-0">REVERSI</h1>
+            <h1 class="text-3xl md:text-4xl font-black tracking-tighter animated-title italic mt-6 md:mt-0 pt-2 md:pt-0 pr-2">REVERSI</h1>
             <p id="mode-badge" class="text-[8px] text-blue-400 tracking-[0.4em] uppercase opacity-70"></p>
             <div id="online-info" class="hidden mt-4">
                 <div class="flex flex-col items-center justify-center gap-2">
@@ -362,7 +362,7 @@
                 <div class="w-8 h-8 md:w-12 md:h-12 mb-1 md:mb-2 rounded-full piece-black border-2 border-gray-900 shadow-xl"></div>
                 <span id="black-score" class="text-3xl md:text-4xl font-black leading-none">2</span>
                 <span id="p1-label"
-                    class="text-[8px] md:text-[10px] uppercase font-black text-white/40 tracking-[0.3em] mt-1 md:mt-2">Svart</span>
+                    class="text-[10px] md:text-xs uppercase font-black text-white tracking-[0.3em] mt-1 md:mt-2">Svart</span>
             </div>
 
             <div class="flex flex-col items-center flex-[1.5] space-y-2 md:space-y-4 px-1 md:px-2">
@@ -378,7 +378,7 @@
                 <div class="w-8 h-8 md:w-12 md:h-12 mb-1 md:mb-2 rounded-full piece-white border-2 border-gray-200 shadow-xl"></div>
                 <span id="white-score" class="text-3xl md:text-4xl font-black leading-none">2</span>
                 <span id="p2-label"
-                    class="text-[8px] md:text-[10px] uppercase font-black text-white/40 tracking-[0.3em] mt-1 md:mt-2">Vit</span>
+                    class="text-[10px] md:text-xs uppercase font-black text-white tracking-[0.3em] mt-1 md:mt-2">Vit</span>
             </div>
         </div>
 
@@ -596,8 +596,12 @@
             // --- REVERSI SPLIT STATION ---
             // Top (Black)
             const topGeom = new THREE.CylinderGeometry(2.5, 2.5, 0.35, 64);
-            const topMat = new THREE.MeshStandardMaterial({ color: 0x111111, metalness: 0.9, roughness: 0.1 });
+            const topMat = new THREE.MeshStandardMaterial({ color: 0x111827, metalness: 0.8, roughness: 0.2 });
             const topHalf = new THREE.Mesh(topGeom, topMat);
+            const blackEdges = new THREE.EdgesGeometry(topGeom, 30);
+            const blackLineMat = new THREE.LineBasicMaterial({ color: 0x10b981, transparent: true, opacity: 0.4 });
+            const blackOutline = new THREE.LineSegments(blackEdges, blackLineMat);
+            topHalf.add(blackOutline);
             topHalf.position.y = 0.175;
             stationGroup.add(topHalf);
 
@@ -605,6 +609,10 @@
             const botGeom = new THREE.CylinderGeometry(2.5, 2.5, 0.35, 64);
             const botMat = new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 0.2, roughness: 0.3 });
             const botHalf = new THREE.Mesh(botGeom, botMat);
+            const whiteEdges = new THREE.EdgesGeometry(botGeom, 30);
+            const whiteLineMat = new THREE.LineBasicMaterial({ color: 0x00f2ff, transparent: true, opacity: 0.2 });
+            const whiteOutline = new THREE.LineSegments(whiteEdges, whiteLineMat);
+            botHalf.add(whiteOutline);
             botHalf.position.y = -0.175;
             stationGroup.add(botHalf);
 
