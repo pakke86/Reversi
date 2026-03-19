@@ -1,4 +1,4 @@
-const CACHE_NAME = 'galaktisk-reversi-v1';
+const CACHE_NAME = 'galaktisk-reversi-v2';
 const ASSETS = [
     './index.html',
     './icon.svg',
@@ -6,6 +6,7 @@ const ASSETS = [
 ];
 
 self.addEventListener('install', event => {
+    self.skipWaiting(); // Tvingar webbläsaren att installera direkt utan att vänta
     event.waitUntil(
         caches.open(CACHE_NAME).then(cache => {
             return cache.addAll(ASSETS);
@@ -14,18 +15,25 @@ self.addEventListener('install', event => {
 });
 
 self.addEventListener('fetch', event => {
+    // "Network-First" Strategy: Hämta alltid senaste versionen från internet först.
+    // Vid offline (flygplansläge), hämta från en sparad fil från cache-minnet
     event.respondWith(
-        caches.match(event.request).then(response => {
-            return response || fetch(event.request).catch(() => {
-                // If network fails (offline), and isn't cached, what to do?
-                // Just let it fail. Firebase handles offline state internally beautifully anyway!
-            });
-        })
+        fetch(event.request)
+            .then(response => {
+                // Spara nyaste versionen i cachen för framtiden
+                if (event.request.method === "GET") {
+                    const responseClone = response.clone();
+                    caches.open(CACHE_NAME).then(cache => cache.put(event.request, responseClone));
+                }
+                return response;
+            })
+            .catch(() => caches.match(event.request))
     );
 });
 
 // Clean up old caches if we update CACHE_NAME
 self.addEventListener('activate', event => {
+    event.waitUntil(clients.claim()); // Tvingar den omedelbart att ta över kontrollen
     event.waitUntil(
         caches.keys().then(keys => Promise.all(
             keys.map(key => {
