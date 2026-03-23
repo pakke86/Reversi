@@ -599,6 +599,7 @@
             'VÄNTAR PÅ SPELARE 2...': 'WAITING FOR PLAYER 2...',
             'MOTSTÅNDAREN GAV UPP!': 'OPPONENT GAVE UP!',
             'SIGNALSTÖRNING': 'SIGNAL INTERFERENCE',
+            'VÄNTAR PÅ ANSLUTNING...': 'WAITING FOR CONNECTION...',
 
             // --- Mobil/Desktop Notifikationer ---
             'Det är din tur att göra ett drag!': 'It is your turn to make a move!',
@@ -902,7 +903,18 @@
             if (!listEl) return;
             listEl.innerHTML = `<div class="text-white/50 text-sm italic py-4">${t('Söker genom galaxen...')}</div>`;
 
-            if (!window.fb || !window.fb.db || !userId) return;
+            if (!window.fb || !window.fb.db) {
+                listEl.innerHTML = `<div class="text-red-500 text-sm font-black py-4">${t('FIREBASE SAKNAS')}</div>`;
+                return;
+            }
+            if (!userId) {
+                if (window.fb.auth && window.fb.auth.currentUser) {
+                    userId = window.fb.auth.currentUser.uid;
+                } else {
+                    listEl.innerHTML = `<div class="text-yellow-500 text-sm font-black py-4">${t('VÄNTAR PÅ ANSLUTNING...')}</div>`;
+                    return;
+                }
+            }
 
             try {
                 const { db, appId, collection, query, where, getDocs } = window.fb;
