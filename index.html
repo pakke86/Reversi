@@ -835,29 +835,60 @@
 
         const getSafeEl = (id) => document.getElementById(id);
 
-        async function updatePendingMovesCount() {
+        let globalMyTurnCache = {};
+        let globalMatchesListenersStarted = false;
+
+        function updatePendingMovesCount() {
             if (!window.fb || !window.fb.db || !userId) return;
+            if (globalMatchesListenersStarted) return;
+            globalMatchesListenersStarted = true;
+
             try {
-                const { db, appId, collection, query, where, getDocs } = window.fb;
+                const { db, appId, collection, query, where, onSnapshot } = window.fb;
                 const matchesRef = collection(db, 'artifacts', appId, 'public', 'data', 'matches');
-                const [snap1, snap2] = await Promise.all([getDocs(query(matchesRef, where('playerBlack', '==', userId))), getDocs(query(matchesRef, where('playerWhite', '==', userId)))]);
-                let count = 0;
-                const processDoc = (doc) => {
+                const q1 = query(matchesRef, where('playerBlack', '==', userId));
+                const q2 = query(matchesRef, where('playerWhite', '==', userId));
+
+                const processChange = (change) => {
+                    const doc = change.doc;
                     const m = doc.data();
-                    if (!m.gameOver && !m.abortedBy && localStorage.getItem('hide_match_' + doc.id) !== 'true') {
-                        const amIBlack = (m.playerBlack === userId);
-                        const isOnlineMatchFull = !!(m.playerBlack && m.playerWhite);
-                        const myTurn = isOnlineMatchFull && ((m.currentPlayer === BLACK && amIBlack) || (m.currentPlayer === WHITE && !amIBlack));
-                        if (myTurn) count++;
+                    if (m.gameOver || m.abortedBy || localStorage.getItem('hide_match_' + doc.id) === 'true') {
+                        delete globalMyTurnCache[doc.id];
+                        return;
+                    }
+                    const amIBlack = (m.playerBlack === userId);
+                    const isOnlineMatchFull = !!(m.playerBlack && m.playerWhite);
+                    const myTurn = isOnlineMatchFull && ((m.currentPlayer === BLACK && amIBlack) || (m.currentPlayer === WHITE && !amIBlack));
+                    
+                    if (myTurn && globalMyTurnCache[doc.id] !== true) {
+                        if (currentMatchId !== doc.id && "Notification" in window && Notification.permission === "granted") {
+                            const msg = t('Det är din tur att göra ett drag!');
+                            if (navigator.serviceWorker) navigator.serviceWorker.ready.then(r => r.showNotification("Galaktisk Reversi", { body: msg, icon: "icon.svg", vibrate: [200, 100, 200] })).catch(() => new Notification("Galaktisk Reversi", { body: msg, icon: "icon.svg" }));
+                            else new Notification("Galaktisk Reversi", { body: msg, icon: "icon.svg" });
+                        }
+                    }
+                    if (myTurn) globalMyTurnCache[doc.id] = true;
+                    else delete globalMyTurnCache[doc.id];
+                };
+
+                const evaluateAndDraw = () => {
+                    let count = Object.keys(globalMyTurnCache).length;
+                    const btn = getSafeEl('reconnect-btn');
+                    if (btn) {
+                        btn.innerHTML = t('PÅGÅENDE SPEL') + (count > 0 ? `<span class="bg-red-500 text-white rounded-full px-2 py-0.5 ml-2 text-[10px] animate-pulse">${count}</span>` : '');
+                    }
+                    const am = getSafeEl('active-matches-menu');
+                    if (am && !am.classList.contains('hidden')) {
+                        showActiveMatchesMenu();
                     }
                 };
-                snap1.forEach(processDoc);
-                snap2.forEach(processDoc);
-                const btn = getSafeEl('reconnect-btn');
-                if (btn) {
-                    btn.innerHTML = t('PÅGÅENDE SPEL') + (count > 0 ? `<span class="bg-red-500 text-white rounded-full px-2 py-0.5 ml-2 text-[10px] animate-pulse">${count}</span>` : '');
-                }
-            } catch (e) { console.error("Pending count err:", e); }
+
+                onSnapshot(q1, (snap) => { snap.docChanges().forEach(processChange); evaluateAndDraw(); }, (e) => console.error(e));
+                onSnapshot(q2, (snap) => { snap.docChanges().forEach(processChange); evaluateAndDraw(); }, (e) => console.error(e));
+            } catch (e) {
+                console.error("Pending count err:", e);
+                globalMatchesListenersStarted = false;
+            }
         }
 
         function startGame(mode) {
@@ -881,6 +912,9 @@
         }
 
         function showOnlineMenu() {
+            if ("Notification" in window && Notification.permission !== "granted" && Notification.permission !== "denied") {
+                Notification.requestPermission();
+            }
             const s = getSafeEl('start-screen'), o = getSafeEl('online-menu');
             if (stationGroup) stationGroup.visible = false;
             if (s) s.classList.add('hidden'); if (o) o.classList.remove('hidden');
