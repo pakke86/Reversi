@@ -269,12 +269,12 @@
 
     <!-- Startskärm -->
     <div id="start-screen"
-        class="fixed inset-0 z-50 flex items-start md:items-center justify-center p-6 pt-[8vh] md:pt-6">
+        class="fixed inset-0 z-50 flex flex-col items-center justify-start md:justify-center p-6 pt-[12vh] md:pt-6 gap-8 md:gap-12">
+        <h1
+            class="text-6xl sm:text-7xl md:text-8xl font-black italic tracking-tighter animated-title drop-shadow-[0_0_25px_rgba(16,185,129,0.5)] z-20 pr-4 md:pr-6 pb-2">
+            REVERSI</h1>
         <div
-            class="glass-panel relative p-10 rounded-[3rem] border-2 border-emerald-500/50 max-w-sm w-full text-center space-y-10 shadow-2xl z-10">
-            <h1
-                class="text-5xl sm:text-6xl md:text-7xl font-black italic tracking-tighter animated-title text-shadow-lg">
-                REVERSI</h1>
+            class="glass-panel relative p-8 md:p-10 rounded-[3rem] border-2 border-emerald-500/50 max-w-sm w-full text-center space-y-8 shadow-[0_0_40px_rgba(16,185,129,0.15)] z-10">
             <div class="space-y-4">
                 <button onclick="startGame('solo')"
                     class="w-full bg-emerald-600 hover:bg-emerald-500 py-4 rounded-[2rem] font-black tracking-widest uppercase transition-all shadow-2xl hover:scale-105 active:scale-95 text-xs">Singelspel</button>
@@ -377,18 +377,28 @@
         <div id="duo-scoreboard"
             class="hidden glass-panel py-3 px-2 md:py-5 md:px-3 rounded-[2rem] md:rounded-[3rem] shadow-2xl relative overflow-hidden flex justify-between items-center border border-white/10 w-full mb-2 rotate-180">
             <div id="duo-p1-container" class="flex flex-col items-center flex-1 transition-all">
-                <div class="w-8 h-8 md:w-12 md:h-12 mb-1 md:mb-2 rounded-full piece-black border-2 border-gray-900 shadow-xl"></div>
+                <div
+                    class="w-8 h-8 md:w-12 md:h-12 mb-1 md:mb-2 rounded-full piece-black border-2 border-gray-900 shadow-xl">
+                </div>
                 <span id="duo-black-score" class="text-3xl md:text-4xl font-black leading-none">2</span>
-                <span id="duo-p1-label" class="text-[10px] md:text-xs uppercase font-black text-white tracking-[0.3em] mt-1 md:mt-2">Svart</span>
+                <span id="duo-p1-label"
+                    class="text-[10px] md:text-xs uppercase font-black text-white tracking-[0.3em] mt-1 md:mt-2">Svart</span>
             </div>
             <div class="flex flex-col items-center flex-[1.5] space-y-2 md:space-y-4 px-1 md:px-2">
-                <div id="duo-turn-indicator" class="px-3 py-1.5 md:px-5 md:py-2.5 rounded-full bg-emerald-600/90 font-black text-[9px] md:text-xs tracking-[0.1em] md:tracking-[0.2em] uppercase shadow-lg animate-pulse whitespace-nowrap">VÄNTAR</div>
-                <button onclick="requestQuit()" class="text-[8px] md:text-[10px] font-black uppercase text-red-500/80 hover:text-red-400 tracking-[0.1em] md:tracking-[0.2em] border border-red-900/40 px-3 py-1.5 md:px-4 md:py-2 rounded-full transition-all hover:bg-red-900/20">Abort Mission</button>
+                <div id="duo-turn-indicator"
+                    class="px-3 py-1.5 md:px-5 md:py-2.5 rounded-full bg-emerald-600/90 font-black text-[9px] md:text-xs tracking-[0.1em] md:tracking-[0.2em] uppercase shadow-lg animate-pulse whitespace-nowrap">
+                    VÄNTAR</div>
+                <button onclick="requestQuit()"
+                    class="text-[8px] md:text-[10px] font-black uppercase text-red-500/80 hover:text-red-400 tracking-[0.1em] md:tracking-[0.2em] border border-red-900/40 px-3 py-1.5 md:px-4 md:py-2 rounded-full transition-all hover:bg-red-900/20">Abort
+                    Mission</button>
             </div>
             <div id="duo-p2-container" class="flex flex-col items-center flex-1 transition-all">
-                <div class="w-8 h-8 md:w-12 md:h-12 mb-1 md:mb-2 rounded-full piece-white border-2 border-gray-200 shadow-xl"></div>
+                <div
+                    class="w-8 h-8 md:w-12 md:h-12 mb-1 md:mb-2 rounded-full piece-white border-2 border-gray-200 shadow-xl">
+                </div>
                 <span id="duo-white-score" class="text-3xl md:text-4xl font-black leading-none">2</span>
-                <span id="duo-p2-label" class="text-[10px] md:text-xs uppercase font-black text-white tracking-[0.3em] mt-1 md:mt-2">Vit</span>
+                <span id="duo-p2-label"
+                    class="text-[10px] md:text-xs uppercase font-black text-white tracking-[0.3em] mt-1 md:mt-2">Vit</span>
             </div>
         </div>
 
@@ -428,17 +438,28 @@
         <!-- Theme Picker Below Board Left -->
         <div class="w-full flex justify-start pl-2 pt-2">
             <div id="theme-picker" class="relative z-[60] flex flex-row items-center gap-2">
-                <button onclick="toggleTheme()" class="w-8 h-8 md:w-10 md:h-10 bg-black/80 border border-white/30 rounded-full flex items-center justify-center hover:bg-white/20 transition-all shadow-2xl backdrop-blur-md text-white group" title="Välj Färgtema">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 md:h-5 md:w-5 group-hover:rotate-12 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+                <button onclick="toggleTheme()"
+                    class="w-8 h-8 md:w-10 md:h-10 bg-black/80 border border-white/30 rounded-full flex items-center justify-center hover:bg-white/20 transition-all shadow-2xl backdrop-blur-md text-white group"
+                    title="Välj Färgtema">
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                        class="h-4 w-4 md:h-5 md:w-5 group-hover:rotate-12 transition-transform" fill="none"
+                        viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
                     </svg>
                 </button>
-                <div id="theme-palette" class="flex flex-row items-center gap-1.5 bg-black/90 backdrop-blur-md px-2.5 py-1.5 rounded-[2rem] border border-white/20 shadow-2xl transition-all duration-300 opacity-0 -translate-x-4 pointer-events-none">
-                    <button onclick="setTheme('emerald')" class="w-5 h-5 rounded-full bg-emerald-500 hover:scale-125 transition-transform border border-white/30 shadow-[0_0_10px_rgba(16,185,129,0.5)]"></button>
-                    <button onclick="setTheme('purple')" class="w-5 h-5 rounded-full bg-purple-500 hover:scale-125 transition-transform border border-white/30 shadow-[0_0_10px_rgba(168,85,247,0.5)]"></button>
-                    <button onclick="setTheme('blue')" class="w-5 h-5 rounded-full bg-cyan-500 hover:scale-125 transition-transform border border-white/30 shadow-[0_0_10px_rgba(6,182,212,0.5)]"></button>
-                    <button onclick="setTheme('rose')" class="w-5 h-5 rounded-full bg-rose-500 hover:scale-125 transition-transform border border-white/30 shadow-[0_0_10px_rgba(225,29,72,0.5)]"></button>
-                    <button onclick="setTheme('orange')" class="w-5 h-5 rounded-full bg-orange-500 hover:scale-125 transition-transform border border-white/30 shadow-[0_0_10px_rgba(249,115,22,0.5)]"></button>
+                <div id="theme-palette"
+                    class="flex flex-row items-center gap-1.5 bg-black/90 backdrop-blur-md px-2.5 py-1.5 rounded-[2rem] border border-white/20 shadow-2xl transition-all duration-300 opacity-0 -translate-x-4 pointer-events-none">
+                    <button onclick="setTheme('emerald')"
+                        class="w-5 h-5 rounded-full bg-emerald-500 hover:scale-125 transition-transform border border-white/30 shadow-[0_0_10px_rgba(16,185,129,0.5)]"></button>
+                    <button onclick="setTheme('purple')"
+                        class="w-5 h-5 rounded-full bg-purple-500 hover:scale-125 transition-transform border border-white/30 shadow-[0_0_10px_rgba(168,85,247,0.5)]"></button>
+                    <button onclick="setTheme('blue')"
+                        class="w-5 h-5 rounded-full bg-cyan-500 hover:scale-125 transition-transform border border-white/30 shadow-[0_0_10px_rgba(6,182,212,0.5)]"></button>
+                    <button onclick="setTheme('rose')"
+                        class="w-5 h-5 rounded-full bg-rose-500 hover:scale-125 transition-transform border border-white/30 shadow-[0_0_10px_rgba(225,29,72,0.5)]"></button>
+                    <button onclick="setTheme('orange')"
+                        class="w-5 h-5 rounded-full bg-orange-500 hover:scale-125 transition-transform border border-white/30 shadow-[0_0_10px_rgba(249,115,22,0.5)]"></button>
                 </div>
             </div>
         </div>
@@ -646,7 +667,7 @@
                 starPositions[i * 3 + 2] = (Math.random() - 0.5) * 60 - 20;
             }
             starGeometry.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
-            
+
             const circleCanvas = document.createElement('canvas');
             circleCanvas.width = 16; circleCanvas.height = 16;
             const ctx = circleCanvas.getContext('2d');
@@ -655,7 +676,7 @@
             ctx.fillStyle = '#ffffff';
             ctx.fill();
             const starTexture = new THREE.CanvasTexture(circleCanvas);
-            
+
             const starMaterial = new THREE.PointsMaterial({ color: 0xffffff, size: 0.2, transparent: true, opacity: 0.95, map: starTexture });
             starField = new THREE.Points(starGeometry, starMaterial);
             scene.add(starField);
@@ -727,14 +748,14 @@
 
         function animateStation() {
             requestAnimationFrame(animateStation);
-            if (stationGroup && starsMoving) {
+            if (stationGroup) {
                 stationGroup.rotation.y += 0.003;
                 stationGroup.rotation.z = Math.sin(Date.now() * 0.0003) * 0.1;
             }
             if (starField && starsMoving) {
                 starField.rotation.y += 0.0002;
             }
-        renderer.render(scene, camera);
+            renderer.render(scene, camera);
         }
 
         window.addEventListener('resize', () => {
@@ -848,11 +869,11 @@
             if (o) o.classList.add('hidden');
             if (oi) oi.classList.add('hidden');
             if (mode === 'duo') {
-                if(ds) ds.classList.remove('hidden');
-                if(ms && brd) { brd.after(ms); ms.classList.remove('mb-2'); ms.classList.add('mt-2'); }
+                if (ds) ds.classList.remove('hidden');
+                if (ms && brd) { brd.after(ms); ms.classList.remove('mb-2'); ms.classList.add('mt-2'); }
             } else {
-                if(ds) ds.classList.add('hidden');
-                if(ms && brd) { brd.before(ms); ms.classList.remove('mt-2'); ms.classList.add('mb-2'); }
+                if (ds) ds.classList.add('hidden');
+                if (ms && brd) { brd.before(ms); ms.classList.remove('mt-2'); ms.classList.add('mb-2'); }
             }
             if (g) g.classList.remove('hidden');
             initBoard();
@@ -1018,8 +1039,8 @@
             if (o) o.classList.add('hidden'); if (g) g.classList.remove('hidden'); if (oi) oi.classList.remove('hidden'); if (cm) cm.innerText = matchId;
             if (btnBack) btnBack.classList.remove('hidden');
             const ms = getSafeEl('main-scoreboard'), ds = getSafeEl('duo-scoreboard'), brd = getSafeEl('board');
-            if(ds) ds.classList.add('hidden');
-            if(ms && brd) { brd.before(ms); ms.classList.remove('mt-2'); ms.classList.add('mb-2'); }
+            if (ds) ds.classList.add('hidden');
+            if (ms && brd) { brd.before(ms); ms.classList.remove('mt-2'); ms.classList.add('mb-2'); }
             const { db, appId, doc, onSnapshot } = window.fb;
             unsubscribeMatch = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'matches', matchId), (snap) => { if (snap.exists()) syncFromOnline(snap.data()); }, (err) => showToast("SIGNALSTÖRNING"));
         }
@@ -1081,10 +1102,10 @@
             const p1c = getSafeEl('p1-container'), p2c = getSafeEl('p2-container'), indicator = getSafeEl('turn-indicator');
             const dp1c = getSafeEl('duo-p1-container'), dp2c = getSafeEl('duo-p2-container'), dIndicator = getSafeEl('duo-turn-indicator');
             const o1 = currentPlayer === BLACK ? "1" : "0.3", o2 = currentPlayer === WHITE ? "1" : "0.3";
-            
+
             if (p1c) p1c.style.opacity = o1; if (p2c) p2c.style.opacity = o2;
             if (dp1c) dp1c.style.opacity = o1; if (dp2c) dp2c.style.opacity = o2;
-            
+
             let txt = "", cls = "";
             if (gameMode === 'online') {
                 if (!isOnlineMatchFull) {
@@ -1251,7 +1272,7 @@
 
         window.onload = () => {
             const savedTheme = localStorage.getItem('reversi_theme');
-            if(savedTheme) setTheme(savedTheme);
+            if (savedTheme) setTheme(savedTheme);
             if ('serviceWorker' in navigator) {
                 navigator.serviceWorker.register('sw.js').catch(e => console.error('PWA fail:', e));
             }
